@@ -1,0 +1,5 @@
+bin/
+obj/
+.vs/
+build/
+lib/see_sharp_native.lib
