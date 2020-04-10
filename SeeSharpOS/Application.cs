@@ -27,6 +27,20 @@ public static class Application {
 		Console.ReadKey();
 		Console.Clear();
 
+		uint DescriptorSize = 0;
+		uint MemoryMapSize = 0;
+		uint MemoryMap = 0;
+		uint DescriptorVersion = 0;
+		EFI_MEMORY_DESCRIPTOR memoryDescriptor;
+		
+		EFI.ST->BootServices->GetMemoryMap(out MemoryMapSize, out memoryDescriptor, out MemoryMap, out DescriptorSize, out DescriptorVersion);
+		uint result = EFI.ST->BootServices->ExitBootServices(imageHandle, MemoryMap);
+
+		Console.Write("Exit Status:");
+		Console.Write(result);
+		Console.WriteLine("");
+		Console.WriteLine("Post-Exit!");
+
 		return 0;
 	}
 

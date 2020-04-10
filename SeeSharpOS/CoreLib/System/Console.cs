@@ -138,6 +138,44 @@
 			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x + i);
 		}
 
+		public static unsafe void Write(uint val) {
+			char* x = stackalloc char[12];
+			var i = 8;
+
+			x[9] = '\0';
+
+			do {
+				var d = val % 10;
+				val /= 10;
+
+				d += 0x30;
+				x[i--] = (char)d;
+			} while (val > 0);
+
+			i++;
+
+			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x + i);
+		}
+
+		public static unsafe void Write(ulong val) {
+			char* x = stackalloc char[24];
+			var i = 16;
+
+			x[17] = '\0';
+
+			do {
+				var d = val % 10;
+				val /= 10;
+
+				d += 0x30;
+				x[i--] = (char)d;
+			} while (val > 0);
+
+			i++;
+
+			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x + i);
+		}
+
 		public static unsafe void Write(string s) {
 			fixed (char* c = s)
 				EFI.ST->ConOut->OutputString(EFI.ST->ConOut, c);

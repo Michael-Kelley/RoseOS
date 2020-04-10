@@ -101,6 +101,15 @@ public readonly struct EFI_EVENT {
 }
 
 [StructLayout(LayoutKind.Sequential)]
+public readonly struct EFI_MEMORY_DESCRIPTOR {
+	public readonly uint Type;
+	public readonly EFI_PHYSICAL_ADDRESS PhysicalStart;
+	public readonly EFI_VIRTUAL_ADDRESS VirtualStart;
+	public readonly ulong NumberOfPages;
+	public readonly ulong Attribute;
+};
+
+[StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL {
 	readonly IntPtr _reset;
 	readonly IntPtr _readKeyStroke;
@@ -113,6 +122,20 @@ public unsafe readonly struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL {
 
 	public ulong ReadKeyStroke(void* handle, EFI_INPUT_KEY* Key)
 		=> RawCalliHelper.StdCall(_readKeyStroke, (byte*)handle, Key);
+}
+
+public readonly struct EFI_VIRTUAL_ADDRESS {
+	private readonly ulong _address;
+
+	public ulong GetAddress()
+		=> _address;
+}
+
+public readonly struct EFI_PHYSICAL_ADDRESS {
+	private readonly ulong _address;
+
+	public ulong GetAddress()
+		=> _address;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -181,6 +204,19 @@ public unsafe readonly struct EFI_BOOT_SERVICES {
 
 	public ulong CopyMem(IntPtr dst, IntPtr src, ulong length)
 		=> RawCalliHelper.StdCall(_CopyMem, dst, src, length);
+
+	public uint GetMemoryMap(out uint MemoryMapSize, out EFI_MEMORY_DESCRIPTOR MemoryMap, out uint MapKey, out uint DescriptorSize, out uint DescriptorVersion)
+	{
+		fixed ( uint* memMapAddress = &MemoryMapSize )
+		fixed ( EFI_MEMORY_DESCRIPTOR* memMapDescriptor = &MemoryMap )
+		fixed ( uint* mapKeyAddress = &MapKey )
+		fixed ( uint* descriptorSizeAddress = &DescriptorSize )
+		fixed ( uint* descriptorVersionAddress = &DescriptorVersion )
+			return (uint)(RawCalliHelper.StdCall(_GetMemoryMap, memMapAddress, memMapDescriptor, mapKeyAddress, descriptorSizeAddress, descriptorVersionAddress) & 0xFFFFFFFF);
+	}
+
+	public uint ExitBootServices(IntPtr ImageHandle, uint MapKey)
+		=> (uint)(RawCalliHelper.StdCall(_ExitBootServices, ImageHandle, MapKey) & 0xFFFFFFFF);
 }
 
 [StructLayout(LayoutKind.Sequential)]
