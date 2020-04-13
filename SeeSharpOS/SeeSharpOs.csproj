@@ -6,7 +6,8 @@
     <LangVersion>8.0</LangVersion>
     <EnableDefaultItems>false</EnableDefaultItems>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Optimize>true</Optimize>
+    <!--<Optimize>true</Optimize>-->
+    <Optimize>false</Optimize>
     
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
@@ -16,10 +17,15 @@
     
     <IlcGenerateDgmlFile>true</IlcGenerateDgmlFile>
     <IlcGenerateMapFile>true</IlcGenerateMapFile>
-    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <!--<IlcOptimizationPreference>Size</IlcOptimizationPreference>-->
     <IlcDisableReflection>true</IlcDisableReflection>
     <IlcSystemModule>SeeSharpOs</IlcSystemModule>
     <Platforms>AnyCPU;x64</Platforms>
+    <Configurations>Debug;Release;DebugWindows</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='DebugWindows'">
+    <DefineConstants>TRACE;WIN_TARGET</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,11 +42,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <LinkerArg Include="/subsystem:EFI_APPLICATION /entry:EfiMain" />
+    <LinkerArg Condition="'$(DefineConstants.Contains(`WIN_TARGET`))'" Include="/subsystem:CONSOLE /entry:ConsoleMain" />
+    <LinkerArg Condition="'!$(DefineConstants.Contains(`WIN_TARGET`))'" Include="/subsystem:EFI_APPLICATION /entry:EfiMain" />
   </ItemGroup>
 
   <ItemGroup>
     <NativeLibrary Include="$(MSBuildStartupDirectory)\lib\see_sharp_native.lib" />
+    <NativeLibrary Condition="'$(DefineConstants.Contains(`WIN_TARGET`))'" Include="kernel32.lib" />
   </ItemGroup>
 
   <Target Name="CustomizeReferences" BeforeTargets="BeforeCompile" AfterTargets="FindReferenceAssembliesForReferences">
@@ -50,7 +58,7 @@
     </ItemGroup>
   </Target>
   
-  <Target Name="CopyAndRunEFI" AfterTargets="Publish">
+  <Target Name="CopyAndRunEFI" AfterTargets="Publish" Condition="'!$(DefineConstants.Contains(`WIN_TARGET`))'">
     <!-- <WriteLinesToFile File="$$(MSBuildStartupDirectory)\build\startup.nsh" Overwrite="true" Lines="\EFI\BOOT\BOOTX64.efi" /> -->
     <Copy SourceFiles="$(MSBuildProjectDirectory)\$(NativeOutputPath)$(TargetName)$(NativeBinaryExt)" DestinationFiles="$(MSBuildStartupDirectory)\build\EFI\BOOT\BOOTX64.efi" />
     <Exec Command="$(MSBuildStartupDirectory)\\tools\\qemu\\qemu-system-x86_64 -L &quot;$(MSBuildStartupDirectory)\\tools\\qemu\\&quot; -bios bios64.bin -k en-gb -drive file=fat:rw:&quot;$(MSBuildStartupDirectory)\\build\\&quot;,format=raw,media=disk" />

@@ -2,7 +2,7 @@
 
 namespace System {
 	public unsafe struct IntPtr {
-		private void* _value;
+		void* _value;
 
 		public IntPtr(void* value) { _value = value; }
 		public IntPtr(int value) { _value = (void*)value; }
@@ -10,6 +10,15 @@ namespace System {
 
 		[Intrinsic]
 		public static readonly IntPtr Zero;
+
+		//public override bool Equals(object o)
+		//	=> _value == ((IntPtr)o)._value;
+
+		public bool Equals(IntPtr ptr)
+			=> _value == ptr._value;
+
+		//public override int GetHashCode()
+		//	=> (int)_value;
 
 		public static explicit operator IntPtr(int value) => new IntPtr(value);
 		public static explicit operator IntPtr(long value) => new IntPtr(value);

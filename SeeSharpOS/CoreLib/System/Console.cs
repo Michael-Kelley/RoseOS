@@ -40,10 +40,11 @@
 		}
 
 		public static unsafe void Clear() {
-			EFI.ST->ConOut->ClearScreen(EFI.ST->ConOut);
+			Native.ClearConsole();
 		}
 
 		public static unsafe ConsoleKeyInfo ReadKey(bool intercept = false) {
+			// TODO: Change this to use Native instead of platform-specific code
 			if (lastKey == '\0') {
 				EFI.ST->ConIn->Reset(EFI.ST->ConIn, false);
 
@@ -85,6 +86,10 @@
 				Write(c);
 
 			return new ConsoleKeyInfo(c, k, false, false, false);
+
+			//var c = Native.ReadKey();
+
+			//return new ConsoleKeyInfo(c, default, false, false, false);
 		}
 
 		public unsafe static void SetCursorPosition(int x, int y) {
@@ -139,18 +144,11 @@
 		}
 
 		public static unsafe void Write(string s) {
-			fixed (char* c = s)
-				EFI.ST->ConOut->OutputString(EFI.ST->ConOut, c);
+			Native.Print(s);
 		}
 
-		public static unsafe void WriteLine(string s) {
-			Write(s);
-
-			char* x = stackalloc char[3];
-			x[0] = '\r';
-			x[1] = '\n';
-			x[2] = '\0';
-			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x);
+		public static unsafe void WriteLine(string s = "") {
+			Native.PrintLine(s);
 		}
 
 		public static unsafe string ReadLine() {

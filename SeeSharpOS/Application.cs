@@ -2,47 +2,69 @@ using System;
 using System.Runtime;
 using System.Runtime.InteropServices;
 
-public static class Native {
-	[DllImport("*")]
-	public static extern int add_1_to_value(int value);
-}
+using Internal.Runtime.CompilerServices;
+
+//public static class Native {
+//	[DllImport("*")]
+//	public static extern int add_1_to_value(int value);
+//}
 
 public static class Application {
-	[RuntimeExport("EfiMain")]
-	unsafe static long EfiMain(IntPtr imageHandle, EFI_SYSTEM_TABLE* systemTable) {
-		EFI.Initialize(systemTable);
-		Console.Clear();
-		var v = Native.add_1_to_value(1337);
-		Console.Write((ushort)v);
-		Console.WriteLine("");
-		var a = new A(42);
+	public class A {
+		public int I;
 
-		DoSomething(a);
-		Console.WriteLine("Hello! What is your name?");
-		var s = Console.ReadLine();
-		Console.Write("It's nice to meet you, ");
-		Console.Write(s);
-		Console.WriteLine(" :)");
-		Console.WriteLine("Goodbye for now! Press any key to quit...");
+		public A(int i) {
+			I = i;
+		}
+	}
+
+#if WIN_TARGET
+
+	[RuntimeExport("ConsoleMain")]
+	static unsafe int ConsoleMain() {
+		//Console.Clear();
+		Console.Write("Attach now!");
 		Console.ReadKey();
-		Console.Clear();
+		Console.Write("Hello, ");
+		var c = stackalloc char[] { 'W', 'o', 'r', 'l', 'd', '!', '\0' };
+		var s = new string(c);
+		Console.WriteLine(s);
 
 		return 0;
 	}
 
-	static void DoSomething(A a) {
-		Console.Write("a.B = ");
-		Console.Write((ushort)a.B);
-		Console.WriteLine("");
+#else
+
+	[RuntimeExport("EfiMain")]
+	static unsafe long EfiMain(IntPtr imageHandle, EFI_SYSTEM_TABLE* systemTable) {
+		EFI.Initialize(systemTable);
+		var st = systemTable;
+		var bs = st->BootServices;
+
+		Console.Clear();
+
+#if DEBUG
+		bs->SetWatchdogTimer(0, 0);
+#endif
+		var vendor = new string(st->FirmwareVendor);
+		PrintLine("UEFI Firmware Vendor:   ", vendor);
+		var rev = st->FirmwareRevision;
+		PrintLine("UEFI Firmware Revision: ", (uint)(rev >> 16), ".", (uint)(rev >> 20), ".", (uint)(rev >> 24));
+
+		Console.ReadKey();
+
+		return 0;
 	}
 
-	public static void Main() { }
+#endif
 
-	class A {
-		public int B;
+	static void Main() { }
 
-		public A(int b) {
-			B = b;
-		}
+	// TODO: Delete this once String.Format is implemented
+	static unsafe void PrintLine(params object[] args) {
+		for (int i = 0; i < args.Length; i++)
+			Console.Write(args[i].ToString());
+
+		Console.WriteLine();
 	}
 }

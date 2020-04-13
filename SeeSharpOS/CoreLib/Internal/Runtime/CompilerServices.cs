@@ -9,5 +9,8 @@ namespace Internal.Runtime.CompilerServices {
 
 		[Intrinsic]
 		public static extern ref TTo As<TFrom, TTo>(ref TFrom source);
+
+		[Intrinsic]
+		public static extern void* AsPointer<T>(ref T value);
 	}
 }

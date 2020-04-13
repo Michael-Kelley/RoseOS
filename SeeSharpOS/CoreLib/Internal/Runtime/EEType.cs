@@ -1,6 +1,132 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Internal.Runtime {
+	internal enum EETypeElementType {
+		// Primitive
+		Unknown = 0x00,
+		Void = 0x01,
+		Boolean = 0x02,
+		Char = 0x03,
+		SByte = 0x04,
+		Byte = 0x05,
+		Int16 = 0x06,
+		UInt16 = 0x07,
+		Int32 = 0x08,
+		UInt32 = 0x09,
+		Int64 = 0x0A,
+		UInt64 = 0x0B,
+		IntPtr = 0x0C,
+		UIntPtr = 0x0D,
+		Single = 0x0E,
+		Double = 0x0F,
+
+		ValueType = 0x10,
+		// Enum = 0x11, // EETypes store enums as their underlying type
+		Nullable = 0x12,
+		// Unused 0x13,
+
+		Class = 0x14,
+		Interface = 0x15,
+
+		SystemArray = 0x16, // System.Array type
+
+		Array = 0x17,
+		SzArray = 0x18,
+		ByRef = 0x19,
+		Pointer = 0x1A,
+	}
+
+	[Flags]
+	internal enum EETypeFlags : ushort {
+		/// <summary>
+		/// There are four kinds of EETypes, defined in <c>Kinds</c>.
+		/// </summary>
+		EETypeKindMask = 0x0003,
+
+		/// <summary>
+		/// This flag is set when m_RelatedType is in a different module.  In that case, _pRelatedType
+		/// actually points to an IAT slot in this module, which then points to the desired EEType in the
+		/// other module.  In other words, there is an extra indirection through m_RelatedType to get to 
+		/// the related type in the other module.  When this flag is set, it is expected that you use the 
+		/// "_ppXxxxViaIAT" member of the RelatedTypeUnion for the particular related type you're 
+		/// accessing.
+		/// </summary>
+		RelatedTypeViaIATFlag = 0x0004,
+
+		/// <summary>
+		/// This type was dynamically allocated at runtime.
+		/// </summary>
+		IsDynamicTypeFlag = 0x0008,
+
+		/// <summary>
+		/// This EEType represents a type which requires finalization.
+		/// </summary>
+		HasFinalizerFlag = 0x0010,
+
+		/// <summary>
+		/// This type contain GC pointers.
+		/// </summary>
+		HasPointersFlag = 0x0020,
+
+		/// <summary>
+		/// Type implements ICastable to allow dynamic resolution of interface casts.
+		/// </summary>
+		ICastableFlag = 0x0040,
+
+		/// <summary>
+		/// This type is generic and one or more of its type parameters is co- or contra-variant. This
+		/// only applies to interface and delegate types.
+		/// </summary>
+		GenericVarianceFlag = 0x0080,
+
+		/// <summary>
+		/// This type has optional fields present.
+		/// </summary>
+		OptionalFieldsFlag = 0x0100,
+
+		// Unused = 0x0200,
+
+		/// <summary>
+		/// This type is generic.
+		/// </summary>
+		IsGenericFlag = 0x0400,
+
+		/// <summary>
+		/// We are storing a EETypeElementType in the upper bits for unboxing enums.
+		/// </summary>
+		ElementTypeMask = 0xf800,
+		ElementTypeShift = 11,
+
+		/// <summary>
+		/// Single mark to check TypeKind and two flags. When non-zero, casting is more complicated.
+		/// </summary>
+		ComplexCastingMask = EETypeKindMask | RelatedTypeViaIATFlag | GenericVarianceFlag
+	};
+
+	internal enum EETypeKind : ushort {
+		/// <summary>
+		/// Represents a standard ECMA type
+		/// </summary>
+		CanonicalEEType = 0x0000,
+
+		/// <summary>
+		/// Represents a type cloned from another EEType
+		/// </summary>
+		ClonedEEType = 0x0001,
+
+		/// <summary>
+		/// Represents a parameterized type. For example a single dimensional array or pointer type
+		/// </summary>
+		ParameterizedEEType = 0x0002,
+
+		/// <summary>
+		/// Represents an uninstantiated generic type definition
+		/// </summary>
+		GenericTypeDefEEType = 0x0003,
+	}
+
+
 	//    [StructLayout(LayoutKind.Sequential)]
 	//    internal struct ObjHeader {
 	//        // Contents of the object header
@@ -165,11 +291,11 @@ namespace Internal.Runtime {
 		private const uint ValueTypePaddingAlignmentMask = 0xF8;
 		private const int ValueTypePaddingAlignmentShift = 3;
 
-		//internal ushort ComponentSize {
-		//	get {
-		//		return _usComponentSize;
-		//	}
-		//}
+		internal ushort ComponentSize {
+			get {
+				return _usComponentSize;
+			}
+		}
 
 		//internal ushort GenericArgumentCount {
 		//	get {
@@ -208,11 +334,11 @@ namespace Internal.Runtime {
 		//	}
 		//}
 
-		//private EETypeKind Kind {
-		//	get {
-		//		return (EETypeKind)(_usFlags & (ushort)EETypeFlags.EETypeKindMask);
-		//	}
-		//}
+		private EETypeKind Kind {
+			get {
+				return (EETypeKind)(_usFlags & (ushort)EETypeFlags.EETypeKindMask);
+			}
+		}
 
 		//internal bool HasOptionalFields {
 		//	get {
@@ -252,19 +378,19 @@ namespace Internal.Runtime {
 		//	}
 		//}
 
-		//internal bool IsString {
-		//	get {
-		//		// String is currently the only non-array type with a non-zero component size.
-		//		return ComponentSize == StringComponentSize.Value && !IsArray && !IsGenericTypeDefinition;
-		//	}
-		//}
+		internal bool IsString {
+			get {
+				// String is currently the only non-array type with a non-zero component size.
+				return ComponentSize == sizeof(char) && !IsArray && !IsGenericTypeDefinition;
+			}
+		}
 
-		//internal bool IsArray {
-		//	get {
-		//		EETypeElementType elementType = ElementType;
-		//		return elementType == EETypeElementType.Array || elementType == EETypeElementType.SzArray;
-		//	}
-		//}
+		internal bool IsArray {
+			get {
+				EETypeElementType elementType = ElementType;
+				return elementType == EETypeElementType.Array || elementType == EETypeElementType.SzArray;
+			}
+		}
 
 
 		//internal int ArrayRank {
@@ -293,11 +419,11 @@ namespace Internal.Runtime {
 		//	}
 		//}
 
-		//internal bool IsGenericTypeDefinition {
-		//	get {
-		//		return Kind == EETypeKind.GenericTypeDefEEType;
-		//	}
-		//}
+		internal bool IsGenericTypeDefinition {
+			get {
+				return Kind == EETypeKind.GenericTypeDefEEType;
+			}
+		}
 
 		//internal EEType* GenericDefinition {
 		//	get {
@@ -864,11 +990,11 @@ namespace Internal.Runtime {
 		//	}
 		//}
 
-		//internal EETypeElementType ElementType {
-		//	get {
-		//		return (EETypeElementType)((_usFlags & (ushort)EETypeFlags.ElementTypeMask) >> (ushort)EETypeFlags.ElementTypeShift);
-		//	}
-		//}
+		internal EETypeElementType ElementType {
+			get {
+				return (EETypeElementType)((_usFlags & (ushort)EETypeFlags.ElementTypeMask) >> (ushort)EETypeFlags.ElementTypeShift);
+			}
+		}
 
 		//public bool HasCctor {
 		//	get {

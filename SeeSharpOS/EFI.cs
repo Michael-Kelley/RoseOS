@@ -2,6 +2,29 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+
+public enum EFI_STATUS : ulong {
+	EFI_SUCCESS,
+}
+
+public enum EFI_MEMORY_TYPE : uint {
+	EfiReservedMemoryType,
+	EfiLoaderCode,
+	EfiLoaderData,
+	EfiBootServicesCode,
+	EfiBootServicesData,
+	EfiRuntimeServicesCode,
+	EfiRuntimeServicesData,
+	EfiConventionalMemory,
+	EfiUnusableMemory,
+	EfiACPIReclaimMemory,
+	EfiACPIMemoryNVS,
+	EfiMemoryMappedIO,
+	EfiMemoryMappedIOPortSpace,
+	EfiPalCode,
+	EfiMaxMemoryType
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public struct EFI_HANDLE {
 	private IntPtr _handle;
@@ -111,8 +134,8 @@ public unsafe readonly struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL {
 		RawCalliHelper.StdCall(_reset, (byte*)handle, ExtendedVerification);
 	}
 
-	public ulong ReadKeyStroke(void* handle, EFI_INPUT_KEY* Key)
-		=> RawCalliHelper.StdCall(_readKeyStroke, (byte*)handle, Key);
+	public EFI_STATUS ReadKeyStroke(void* handle, EFI_INPUT_KEY* Key)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_readKeyStroke, (byte*)handle, Key);
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -164,23 +187,29 @@ public unsafe readonly struct EFI_BOOT_SERVICES {
 	private readonly IntPtr _SetMem;
 	private readonly IntPtr _CreateEventEx;
 
-	public ulong WaitForEvent(uint count, EFI_EVENT* events, uint* index)
-		=> RawCalliHelper.StdCall(_WaitForEvent, count, events, index);
+	public EFI_STATUS WaitForEvent(uint count, EFI_EVENT* events, uint* index)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_WaitForEvent, count, events, index);
 
-	public unsafe ulong WaitForSingleEvent(EFI_EVENT evt) {
+	public EFI_STATUS WaitForSingleEvent(EFI_EVENT evt) {
 		uint i = 0;
 
 		return WaitForEvent(1, &evt, &i);
 	}
 
-	public ulong Stall(uint Microseconds)
-		=> RawCalliHelper.StdCall(_Stall, Microseconds);
+	public EFI_STATUS Stall(uint Microseconds)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_Stall, Microseconds);
 
-	public ulong AllocatePool(uint type, ulong size, IntPtr* buf)
-		=> RawCalliHelper.StdCall(_AllocatePool, type, size, buf);
+	public EFI_STATUS AllocatePool(EFI_MEMORY_TYPE type, ulong size, IntPtr* buf)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_AllocatePool, type, size, buf);
 
-	public ulong CopyMem(IntPtr dst, IntPtr src, ulong length)
+	public void CopyMem(IntPtr dst, IntPtr src, ulong length)
 		=> RawCalliHelper.StdCall(_CopyMem, dst, src, length);
+
+	public void SetMem(IntPtr buf, ulong size, byte val)
+		=> RawCalliHelper.StdCall(_SetMem, buf, size, val);
+
+	public EFI_STATUS SetWatchdogTimer(ulong timeout, ulong code, ulong dataSize = 0, char* data = null)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetWatchdogTimer, timeout, code, dataSize, data);
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -242,7 +271,7 @@ public unsafe static class EFI {
 	public static unsafe IntPtr Allocate(ulong length) {
 		IntPtr r = default;
 
-		ST->BootServices->AllocatePool(4, length, &r);
+		ST->BootServices->AllocatePool(EFI_MEMORY_TYPE.EfiBootServicesData, length, &r);
 
 		return r;
 	}
