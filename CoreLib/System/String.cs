@@ -41,7 +41,7 @@ namespace System {
 			var s = Unsafe.As<object, string>(ref data);
 
 			fixed (char* c = &s._firstChar) {
-				Native.CopyMemory((IntPtr)c, (IntPtr)start, (ulong)length * sizeof(char));
+				Platform.CopyMemory((IntPtr)c, (IntPtr)start, (ulong)length * sizeof(char));
 				c[length] = '\0';
 			}
 

@@ -1,9 +1,9 @@
-﻿#if WIN_TARGET
+﻿#if PLATFORM_WIN
 
 using System;
 using System.Runtime.InteropServices;
 
-internal static class Native {
+internal static class Platform {
 	static class Win32 {
 		[DllImport("*")]
 		public static extern IntPtr GlobalAlloc(uint uFlags, ulong dwBytes);
@@ -58,13 +58,12 @@ internal static class Native {
 
 	public unsafe static void PrintLine(string msg) {
 		Print(msg);
-		Print("\r\n");
 
-		//char* x = stackalloc char[3];
-		//x[0] = '\r';
-		//x[1] = '\n';
-		//x[2] = '\0';
-		//Print(x, 2);
+		char* x = stackalloc char[3];
+		x[0] = '\r';
+		x[1] = '\n';
+		x[2] = '\0';
+		Print(x, 2);
 	}
 
 	public unsafe static void PrintLine(char* msg, int len) {

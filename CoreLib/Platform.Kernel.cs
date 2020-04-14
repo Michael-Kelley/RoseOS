@@ -1,19 +1,27 @@
-﻿#if !WIN_TARGET
+﻿#if PLATFORM_KERNEL
 
 using System;
 
-internal static unsafe class Native {
-	public static IntPtr Allocate(ulong size)
-		=> EFI.Allocate(size);
+internal static unsafe class Platform {
+	public static IntPtr Allocate(ulong size) {
+		IntPtr ptr = default;
+		EFI.ST->BootServices->AllocatePool(EFI_MEMORY_TYPE.BootServicesData, size, &ptr);
+
+		return ptr;
+	}
+
+	public static void Free(IntPtr buf) {
+		EFI.ST->BootServices->FreePool(buf);
+	}
 
 	public unsafe static void Print(string msg) {
 		fixed (char* c = msg)
 			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, c);
 	}
 
-	//public unsafe static void Print(char* msg, int len) {
-	//	Win32.WriteConsoleW(StdOut, (IntPtr)msg, len, IntPtr.Zero, IntPtr.Zero);
-	//}
+	public unsafe static void Print(char* msg, int len) {
+		Print(new string(msg, 0, len));
+	}
 
 	public unsafe static void PrintLine(string msg) {
 		Print(msg);

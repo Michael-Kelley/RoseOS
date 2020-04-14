@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>b4da5310-c240-4a7f-b60f-e9813f9577af</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>CoreLib</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\InteropHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\StartupCodeHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\ThrowHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerServices.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\EEType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\TypeSystem\ExceptionStringID.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Platform.Kernel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Platform.EFI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Platform.Windows.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Stubs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Array.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Attribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\AttributeUsageAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\BitHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Console.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleColor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleKey.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleKeyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleModifiers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\EETypePtr.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\FlagsAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\IntPtr.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Object.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\ParamArrayAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\ClassConstructorRunner.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\IntrinsicAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\MethodImplAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\RawCalliHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\RuntimeHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\StaticClassConstructionContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\DllImportAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\FieldOffsetAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\McgIntrinsicsAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\StructLayoutAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\UnmanagedType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\RuntimeExportAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\String.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\_Types.cs" />
+  </ItemGroup>
+</Project>

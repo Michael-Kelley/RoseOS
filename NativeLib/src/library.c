@@ -1,6 +1,8 @@
-#include <stdarg.h>
 
+void outb(unsigned short port, unsigned char value) {
+	__outbyte(port, value);
+}
 
-int add_1_to_value(int value) {
-	return value + 1;
+void outw(unsigned short port, unsigned short value) {
+	__outword(port, value);
 }

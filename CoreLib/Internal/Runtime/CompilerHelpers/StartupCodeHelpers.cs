@@ -25,9 +25,9 @@ namespace Internal.Runtime.CompilerHelpers {
 			if (size % 8 > 0)
 				size = ((size / 8) + 1) * 8;
 
-			var data = Native.Allocate(size);
+			var data = Platform.Allocate(size);
 			var obj = Unsafe.As<IntPtr, object>(ref data);
-			Native.ZeroMemory(data, size);
+			Platform.ZeroMemory(data, size);
 			SetEEType(data, pEEType);
 
 			return obj;
@@ -41,14 +41,14 @@ namespace Internal.Runtime.CompilerHelpers {
 			if (size % 8 > 0)
 				size = ((size / 8) + 1) * 8;
 
-			var data = Native.Allocate(size);
+			var data = Platform.Allocate(size);
 			var obj = Unsafe.As<IntPtr, object>(ref data);
-			Native.ZeroMemory(data, size);
+			Platform.ZeroMemory(data, size);
 			SetEEType(data, pEEType);
 
 			var b = (byte*)data;
 			b += sizeof(IntPtr);
-			Native.CopyMemory((IntPtr)b, (IntPtr)(&length), sizeof(int));
+			Platform.CopyMemory((IntPtr)b, (IntPtr)(&length), sizeof(int));
 
 			return obj;
 		}
@@ -78,7 +78,7 @@ namespace Internal.Runtime.CompilerHelpers {
 		}
 
 		internal static unsafe void SetEEType(IntPtr obj, EEType* type) {
-			Native.CopyMemory(obj, (IntPtr)(&type), (ulong)sizeof(IntPtr));
+			Platform.CopyMemory(obj, (IntPtr)(&type), (ulong)sizeof(IntPtr));
 		}
 	}
 }

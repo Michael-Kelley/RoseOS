@@ -8,39 +8,39 @@
 		static ushort s_windowSizeY;
 #pragma warning restore 169
 
-
-		public static unsafe bool CursorVisible {
-			set {
-				EFI.ST->ConOut->EnableCursor(EFI.ST->ConOut, value);
-			}
-		}
-
-		public unsafe static ConsoleColor ForegroundColor {
-			set {
-				s_consoleAttribute = (ushort)value;
-				uint color = s_consoleAttribute;
-				EFI.ST->ConOut->SetAttribute(EFI.ST->ConOut, color);
-			}
-		}
-
-
 		static char lastKey = '\0';
 		static ushort lastScanCode;
 
-		public static unsafe bool KeyAvailable {
-			get {
-				if (lastKey == '\0')
-					return true;
 
-				EFI_INPUT_KEY key;
-				var errorCode = EFI.ST->ConIn->ReadKeyStroke(EFI.ST->ConIn, &key);
-				lastKey = (char)key.UnicodeChar;
-				return errorCode == 0;
-			}
-		}
+		//public static unsafe bool CursorVisible {
+		//	set {
+		//		EFI.ST->ConOut->EnableCursor(EFI.ST->ConOut, value);
+		//	}
+		//}
+
+		//public unsafe static ConsoleColor ForegroundColor {
+		//	set {
+		//		s_consoleAttribute = (ushort)value;
+		//		uint color = s_consoleAttribute;
+		//		EFI.ST->ConOut->SetAttribute(EFI.ST->ConOut, color);
+		//	}
+		//}
+
+		//public static unsafe bool KeyAvailable {
+		//	get {
+		//		if (lastKey == '\0')
+		//			return true;
+
+		//		EFI_INPUT_KEY key;
+		//		var errorCode = EFI.ST->ConIn->ReadKeyStroke(EFI.ST->ConIn, &key);
+		//		lastKey = (char)key.UnicodeChar;
+		//		return errorCode == 0;
+		//	}
+		//}
+
 
 		public static unsafe void Clear() {
-			Native.ClearConsole();
+			Platform.ClearConsole();
 		}
 
 		public static unsafe ConsoleKeyInfo ReadKey(bool intercept = false) {
@@ -92,14 +92,14 @@
 			//return new ConsoleKeyInfo(c, default, false, false, false);
 		}
 
-		public unsafe static void SetCursorPosition(int x, int y) {
-			s_cursorX = (ushort)x;
-			s_cursorY = (ushort)y;
-			EFI.ST->ConOut->SetCursorPosition(
-				EFI.ST->ConOut,
-				(uint)x,
-				(uint)y);
-		}
+		//public unsafe static void SetCursorPosition(int x, int y) {
+		//	s_cursorX = (ushort)x;
+		//	s_cursorY = (ushort)y;
+		//	EFI.ST->ConOut->SetCursorPosition(
+		//		EFI.ST->ConOut,
+		//		(uint)x,
+		//		(uint)y);
+		//}
 
 		unsafe static void WriteChar(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* ConOut, char data) {
 			// Translate some unicode characters into the IBM hardware codepage
@@ -144,30 +144,28 @@
 		}
 
 		public static unsafe void Write(string s) {
-			Native.Print(s);
+			Platform.Print(s);
 		}
 
 		public static unsafe void WriteLine(string s = "") {
-			Native.PrintLine(s);
+			Platform.PrintLine(s);
 		}
 
 		public static unsafe string ReadLine() {
-			char* buf = null;
+			var buf = stackalloc char[256];
 			var i = 0;
 
-			buf = (char*)EFI.Allocate(256);
-			
 			// TODO: Replace ReadKey with WaitForEvent and ReadKeyStroke
 			while (true) {
 				var c = ReadKey();
 
-				if (c.KeyChar == '\x0D')	// Enter
+				if (c.KeyChar == '\x0D')    // Enter
 					break;
 
 				buf[i++] = c.KeyChar;
 			}
 
-			char* x = stackalloc char[3];
+			var x = stackalloc char[3];
 			x[0] = '\r';
 			x[1] = '\n';
 			x[2] = '\0';

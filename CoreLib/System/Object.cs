@@ -1,4 +1,5 @@
 ﻿using Internal.Runtime;
+using Internal.Runtime.CompilerServices;
 
 namespace System {
 	public class Object {
@@ -16,5 +17,10 @@ namespace System {
 
 		public virtual string ToString()
 			=> "{object}";
+
+		public void Dispose() {
+			var obj = this;
+			Platform.Free(Unsafe.As<object, IntPtr>(ref obj));
+		}
 	}
 }
