@@ -1,32 +1,7 @@
 using System;
 using System.Runtime;
-using System.Runtime.InteropServices;
-
-using Internal.Runtime.CompilerServices;
-
-public static class Native {
-	[DllImport("*")]
-	public static extern void outw(ushort value, ushort port);
-}
 
 public static class Application {
-#if WIN_TARGET
-
-	[RuntimeExport("ConsoleMain")]
-	static unsafe int ConsoleMain() {
-		//Console.Clear();
-		Console.Write("Attach now!");
-		Console.ReadKey();
-		Console.Write("Hello, ");
-		var c = stackalloc char[] { 'W', 'o', 'r', 'l', 'd', '!', '\0' };
-		var s = new string(c);
-		Console.WriteLine(s);
-
-		return 0;
-	}
-
-#else
-
 	const uint LOADER_VERSION = 0x00000001;
 
 	[RuntimeExport("EfiMain")]
@@ -84,7 +59,7 @@ public static class Application {
 			Console.WriteLine("OpenVolume failed!");
 #endif
 
-		res = drive->Open(drive, out EFI_FILE_PROTOCOL* kernel, "test.txt", EFI_FILE_MODE.Read, EFI_FILE_ATTR.ReadOnly);
+		res = drive->Open(drive, out EFI_FILE_PROTOCOL* kernel, "kernel.bin", EFI_FILE_MODE.Read, EFI_FILE_ATTR.ReadOnly);
 
 #if DEBUG
 		if (res != EFI_STATUS.Success)
@@ -104,18 +79,13 @@ public static class Application {
 			Console.WriteLine("Read failed!");
 #endif
 
-		PrintLine("Kernel File Contents: ", new string(buf, 0, (int)fileSize / sizeof(char)));
+		ulong hdr_mem_loc = 0x400000;
 		
 		Console.Write("\r\n\r\nPress any key to quit...");
 		Console.ReadKey();
 
-		// QEMU shutdown
-		Native.outw(0xB004, 0x2000);
-
 		return 0;
 	}
-
-#endif
 
 	static void Main() { }
 

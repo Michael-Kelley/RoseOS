@@ -1,10 +1,61 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Platforms>AnyCPU;x64</Platforms>
+    <LangVersion>8.0</LangVersion>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <Platforms>x64</Platforms>
+    <Configurations>Debug;Release</Configurations>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize Condition="'$(Configuration)'=='Release'">true</Optimize>
+
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <RuntimeMetadataVersion>v4.0.30319</RuntimeMetadataVersion>
+
+    <IlcGenerateDgmlFile>true</IlcGenerateDgmlFile>
+    <IlcGenerateMapFile>true</IlcGenerateMapFile>
+    <IlcOptimizationPreference Condition="'$(Configuration)'=='Release'">Size</IlcOptimizationPreference>
+    <IlcDisableReflection>true</IlcDisableReflection>
+    <IlcSystemModule>Kernel</IlcSystemModule>
+
+    <NativeLib>Shared</NativeLib>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>PLATFORM_KERNEL</DefineConstants>
   </PropertyGroup>
 
   <Import Project="..\CoreLib\CoreLib.projitems" Label="Shared" />
+
+  <ItemGroup>
+    <Compile Include="src\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="1.0.0-alpha-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <LinkerArg Include="/noentry /export:kernel_main" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibrary Include="$(MSBuildStartupDirectory)\lib\see_sharp_native.lib" />
+  </ItemGroup>
+
+  <Target Name="CustomizeReferences" BeforeTargets="BeforeCompile" AfterTargets="FindReferenceAssembliesForReferences">
+    <ItemGroup>
+      <ReferencePathWithRefAssemblies Remove="@(ReferencePathWithRefAssemblies)" />
+      <ReferencePath Remove="@(ReferencePath)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyToVFAT" AfterTargets="Publish">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(NativeOutputPath)$(TargetName)$(NativeBinaryExt)" DestinationFiles="$(MSBuildStartupDirectory)\build\kernel.bin" />
+  </Target>
 
 </Project>

@@ -30,7 +30,7 @@
   <Import Project="..\CoreLib\CoreLib.projitems" Label="Shared" />
 
   <ItemGroup>
-    <Compile Include="Application.cs" />
+    <Compile Include="src\**" />
   </ItemGroup>
 
   <ItemGroup>

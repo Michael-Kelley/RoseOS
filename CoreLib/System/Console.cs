@@ -1,4 +1,6 @@
-﻿namespace System {
+﻿#if !PLATFORM_KERNEL
+
+namespace System {
 	public static class Console {
 		static ushort s_consoleAttribute;
 		static ushort s_cursorX;
@@ -175,3 +177,5 @@
 		}
 	}
 }
+
+#endif
