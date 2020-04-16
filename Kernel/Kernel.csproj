@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <LinkerArg Include="/noentry /export:kernel_main" />
+    <LinkerArg Include="/entry:kernel_main /fixed /base:0x10000000" />
   </ItemGroup>
 
   <ItemGroup>

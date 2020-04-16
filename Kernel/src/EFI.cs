@@ -7,12 +7,6 @@ public enum EFI_STATUS : ulong {
 	Success,
 }
 
-public enum EFI_ALLOCATE_TYPE : uint {
-	AnyPages,
-	MaxAddress,
-	Address
-}
-
 public enum EFI_MEMORY_TYPE : uint {
 	ReservedMemoryType,
 	LoaderCode,
@@ -27,7 +21,8 @@ public enum EFI_MEMORY_TYPE : uint {
 	ACPIMemoryNVS,
 	MemoryMappedIO,
 	MemoryMappedIOPortSpace,
-	PalCode
+	PalCode,
+	MaxMemoryType
 }
 
 [Flags]
@@ -230,9 +225,6 @@ public unsafe readonly struct EFI_BOOT_SERVICES {
 	public EFI_STATUS AllocatePool(EFI_MEMORY_TYPE type, ulong size, IntPtr* buf)
 		=> (EFI_STATUS)RawCalliHelper.StdCall(_AllocatePool, type, size, buf);
 
-	public EFI_STATUS AllocatePages(EFI_ALLOCATE_TYPE type, EFI_MEMORY_TYPE memType, ulong pages, IntPtr mem)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_AllocatePages, type, memType, pages, mem);
-
 	public EFI_STATUS FreePool(IntPtr buf)
 		=> (EFI_STATUS)RawCalliHelper.StdCall(_FreePool, buf);
 
@@ -357,9 +349,6 @@ public unsafe readonly struct EFI_FILE_PROTOCOL {
 		fixed (ulong* pSize = &bufSize)
 			return (EFI_STATUS)RawCalliHelper.StdCall(_Read, handle, pSize, buf);
 	}
-
-	public EFI_STATUS SetPosition(EFI_FILE_PROTOCOL* handle, ulong pos)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetPosition, handle, pos);
 }
 
 [StructLayout(LayoutKind.Sequential)]
