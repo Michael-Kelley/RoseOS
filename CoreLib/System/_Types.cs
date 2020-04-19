@@ -51,6 +51,18 @@ namespace System {
 
 			return new string(x + i, 0, 11 - i);
 		}
+
+		public static int Parse(string val) {
+			// TODO: Throw an error on incorrect format
+			int r = 0;
+
+			for (var i = 0; i < val.Length; i++) {
+				r *= 10;
+				r += val[i] - 48;
+			}
+
+			return r;
+		}
 	}
 
 	public struct UInt32 {

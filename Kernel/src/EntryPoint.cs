@@ -1,11 +1,12 @@
 using System;
-using System.Runtime;
 using System.Runtime.InteropServices;
+
+using Internal.Runtime.CompilerServices;
 
 public class EntryPoint {
 	[NativeCallable(EntryPoint = "kernel_main")]
-	public static unsafe void KernelMain(EFI_SYSTEM_TABLE* efi) {
-		EFI.Initialize(efi);
-		Platform.Print("\r\nHello from the kernel!\r\n");
+	public static unsafe void KernelMain(IntPtr pFb) {
+		var fb = Unsafe.As<IntPtr, FrameBuffer>(ref pFb);
+		fb.Fill(fb.MakePixel(0, 0, 255));
 	}
 }

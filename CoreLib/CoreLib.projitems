@@ -9,7 +9,6 @@
     <Import_RootNamespace>CoreLib</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\InteropHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\StartupCodeHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\ThrowHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerServices.cs" />
@@ -23,6 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Attribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\AttributeUsageAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\BitHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Exception.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Console.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleColor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleKey.cs" />

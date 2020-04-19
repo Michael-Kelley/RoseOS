@@ -4,7 +4,11 @@ using System.Runtime.InteropServices;
 
 
 public enum EFI_STATUS : ulong {
-	Success,
+	Error = 0x8000000000000000,
+
+	Success = 0,
+
+	BufferTooSmall = 5 | Error,
 }
 
 public enum EFI_ALLOCATE_TYPE : uint {
@@ -47,6 +51,19 @@ public enum EFI_FILE_ATTR : ulong {
 	Archive = 32,
 
 	ValidAttr = ReadOnly | Hidden | System | Directory | Archive
+}
+
+public enum EFI_GRAPHICS_PIXEL_FORMAT {
+	RedGreenBlueReserved8BitPerColor,
+	BlueGreenRedReserved8BitPerColor,
+	BitMask,
+	BltOnly
+}
+
+public enum EFI_LOCATE_SEARCH_TYPE {
+	AllHandles,
+	ByRegisterNotify,
+	ByProtocol
 }
 
 
@@ -245,9 +262,39 @@ public unsafe readonly struct EFI_BOOT_SERVICES {
 	public EFI_STATUS SetWatchdogTimer(ulong timeout, ulong code, ulong dataSize = 0, char* data = null)
 		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetWatchdogTimer, timeout, code, dataSize, data);
 
-	public EFI_STATUS OpenProtocol(EFI_HANDLE handle, ref EFI_GUID protocol, IntPtr* iface, EFI_HANDLE agent, EFI_HANDLE controller, uint attr) {
+	public EFI_STATUS OpenProtocol<T>(EFI_HANDLE handle, ref EFI_GUID protocol, out T* iface, EFI_HANDLE agent, EFI_HANDLE controller, uint attr) where T : unmanaged {
 		fixed (EFI_GUID* pProt = &protocol)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_OpenProtocol, handle, pProt, iface, agent, controller, attr);
+		fixed (T** pIface = &iface)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_OpenProtocol, handle, pProt, (IntPtr*)pIface, agent, controller, attr);
+	}
+
+	public EFI_STATUS GetMemoryMap(ref ulong memMapSize, EFI_MEMORY_DESCRIPTOR* memMap, out ulong mapKey, out ulong descSize, out uint descVer) {
+		fixed (ulong* pMapSize = &memMapSize)
+		fixed (ulong* pKey = &mapKey)
+		fixed (ulong* pSize = &descSize)
+		fixed (uint* pVer = &descVer)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_GetMemoryMap, pMapSize, memMap, pKey, pSize, pVer);
+	}
+
+	public EFI_STATUS ExitBootServices(EFI_HANDLE imageHandle, ulong mapKey)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_ExitBootServices, imageHandle, mapKey);
+
+	public EFI_STATUS LocateHandleBuffer(EFI_LOCATE_SEARCH_TYPE searchType, ref EFI_GUID protocol, IntPtr searchKey, ref ulong numHandles, out EFI_HANDLE* buffer) {
+		fixed (EFI_GUID* pProt = &protocol)
+		fixed (ulong* pNum = &numHandles)
+		fixed (EFI_HANDLE** pBuf = &buffer)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_LocateHandleBuffer, searchType, pProt, searchKey, pNum, (IntPtr*)pBuf);
+	}
+
+	public EFI_STATUS HandleProtocol(EFI_HANDLE handle, ref EFI_GUID protocol, out IntPtr iface) {
+		fixed (EFI_GUID* pProt = &protocol)
+		fixed (IntPtr* pIface = &iface)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_HandleProtocol, handle, pProt, pIface);
+	}
+
+	public EFI_STATUS CloseProtocol(EFI_HANDLE handle, ref EFI_GUID protocol, EFI_HANDLE agent, EFI_HANDLE controller) {
+		fixed (EFI_GUID* pProt = &protocol)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_CloseProtocol, handle, pProt, agent, controller);
 	}
 }
 
@@ -313,10 +360,24 @@ public unsafe struct EFI_GUID {
 		Data3 = d3;
 
 		fixed (byte* dst = Data4)
-		fixed (byte* src = &d4[0])
+		fixed (byte* src = d4)
 			Platform.CopyMemory((IntPtr)dst, (IntPtr)src, 8);
 
-		//d4.Dispose();
+		d4.Dispose();
+	}
+
+	public static EFI_GUID LoadedImageProtocol;
+	public static EFI_GUID SimpleFileSystemProtocol;
+	public static EFI_GUID FileInfo;
+	public static EFI_GUID GraphicsOutputProtocol;
+	public static EFI_GUID ComponentName2Protocol;
+
+	internal static void Initialise() {
+		LoadedImageProtocol = new EFI_GUID(0x5B1B31A1, 0x9562, 0x11d2, new byte[] { 0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B });
+		SimpleFileSystemProtocol = new EFI_GUID(0x964e5b22, 0x6459, 0x11d2, new byte[] { 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
+		FileInfo = new EFI_GUID(0x09576e92, 0x6d3f, 0x11d2, new byte[] { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
+		GraphicsOutputProtocol = new EFI_GUID(0x9042a9de, 0x23dc, 0x4a38, new byte[] { 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a });
+		ComponentName2Protocol = new EFI_GUID(0x6a7a5cff, 0xe8d9, 0x4f70, new byte[] { 0xba, 0xda, 0x75, 0xab, 0x30, 0x25, 0xce, 0x14 });
 	}
 }
 
@@ -406,20 +467,88 @@ public unsafe struct EFI_FILE_INFO {
 	public fixed char FileName[128];
 }
 
-public unsafe static class EFI {
-	public static EFI_GUID LoadedImageProtocolGuid;
-	public static EFI_GUID SimpleFileSystemProtocolGuid;
-	public static EFI_GUID FileInfoGuid;
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct EFI_MEMORY_DESCRIPTOR {
+	public readonly uint Type;
+	public readonly ulong PhysicalStart;
+	public readonly ulong VirtualStart;
+	public readonly ulong NumberOfPages;
+	public readonly ulong Attribute;
+}
 
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct EFI_PIXEL_BITMASK {
+	public readonly uint RedMask;
+	public readonly uint GreenMask;
+	public readonly uint BlueMask;
+	public readonly uint ReservedMask;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct EFI_GRAPHICS_OUTPUT_MODE_INFORMATION {
+	public readonly uint Version;
+	public readonly uint HorizontalResolution;
+	public readonly uint VeticalResolution;
+	public readonly EFI_GRAPHICS_PIXEL_FORMAT PixelFormat;
+	public readonly EFI_PIXEL_BITMASK PixelInformation;
+	public readonly uint PixelsPerScanLine;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly unsafe struct EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE {
+	public readonly uint MaxMode;
+	public readonly uint Mode;
+	public readonly EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* Info;
+	public readonly ulong SizeOfInfo;
+	public readonly ulong FrameBufferBase;
+	public readonly ulong FrameBufferSize;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly unsafe struct EFI_GRAPHICS_OUTPUT_PROTOCOL {
+	readonly IntPtr _QueryMode;
+	readonly IntPtr _SetMode;
+	readonly IntPtr _Blt;
+
+	public readonly EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE* Mode;
+
+	public EFI_STATUS QueryMode(EFI_GRAPHICS_OUTPUT_PROTOCOL* ptr, uint modeNumber, out ulong sizeOfInfo, out EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info) {
+		fixed (ulong* pSize = &sizeOfInfo)
+		fixed (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION** pInfo = &info)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_QueryMode, ptr, modeNumber, pSize, (IntPtr*)pInfo);
+	}
+
+	public EFI_STATUS SetMode(EFI_GRAPHICS_OUTPUT_PROTOCOL* ptr, uint mode)
+		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetMode, ptr, mode);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly unsafe struct EFI_COMPONENT_NAME2_PROTOCOL {
+	readonly IntPtr _GetDriverName;
+	readonly IntPtr _GetControllerName;
+
+	public readonly byte* SupportedLanguages;
+
+	public EFI_STATUS GetDriverName(EFI_COMPONENT_NAME2_PROTOCOL* ptr, byte* language, out char* name) {
+		fixed (char** pName = &name)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_GetDriverName, ptr, language, (IntPtr*)pName);
+	}
+
+	public EFI_STATUS GetControllerName(EFI_COMPONENT_NAME2_PROTOCOL* ptr, EFI_HANDLE controller, EFI_HANDLE child, byte* language, out char* name) {
+		fixed (char** pName = &name)
+			return (EFI_STATUS)RawCalliHelper.StdCall(_GetControllerName, ptr, controller, child, language, (IntPtr*)pName);
+	}
+}
+
+
+public unsafe static class EFI {
 	public const uint OPEN_PROTOCOL_GET_PROTOCOL = 0x00000002;
 
 	public static EFI_SYSTEM_TABLE* ST { get; private set; }
 
 
-	public static void Initialize(EFI_SYSTEM_TABLE* systemTable) {
+	public static void Initialise(EFI_SYSTEM_TABLE* systemTable) {
 		ST = systemTable;
-		LoadedImageProtocolGuid = new EFI_GUID(0x5B1B31A1, 0x9562, 0x11d2, new byte[] { 0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B });
-		SimpleFileSystemProtocolGuid = new EFI_GUID(0x964e5b22, 0x6459, 0x11d2, new byte[] { 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
-		FileInfoGuid = new EFI_GUID(0x09576e92, 0x6d3f, 0x11d2, new byte[] { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
+		EFI_GUID.Initialise();
 	}
 }

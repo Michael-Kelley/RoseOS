@@ -161,10 +161,13 @@ namespace System {
 			while (true) {
 				var c = ReadKey();
 
-				if (c.KeyChar == '\x0D')    // Enter
+				if (c.KeyChar == '\x0D')		// Enter
 					break;
 
-				buf[i++] = c.KeyChar;
+				if (c.KeyChar >= 32)            // Ignore all non-alphanumeric-or-symbol characters
+					buf[i++] = c.KeyChar;
+				else if (c.KeyChar == '\x08' && i > 0)   // Backspace
+					i--;
 			}
 
 			var x = stackalloc char[3];
