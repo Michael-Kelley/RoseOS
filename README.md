@@ -10,9 +10,9 @@
 *NOTE: If you later make modifications to NativeLib, make sure to re-publish both the kernel and the loader, as both projects utilise the NativeLib library.*
 
 ### **Running the loader**
-After a successful publish of the loader project, QEMU will automatically run and boot straight in to the loader. The loader will prompt the user to select a graphics mode, and then load the kernel.
+After a successful publish of the loader project, QEMU will automatically run and boot straight in to the loader. The loader will prompt the user to select a graphics mode, and then load the kernel. When prompted to select a graphics mode, use a 0-based index into the list that the loader displays (ie. to select the first mode, type 0, then press enter)
 
-*NOTE: QEMU expects there to be an `os_drive` directory in the root directory, alongside `build` and the SeeSharOS solution file. It is not currently used for anything, but will later be used as a virtual drive to store the OS drivers, applications and user data.*
+*NOTE: QEMU expects there to be an `os_drive` directory in the root directory, alongside `build` and the SeeSharpOS solution file. It is not currently used for anything, but will later be used as a virtual drive to store the OS drivers, applications and user data.*
 
 ### **Note for João**
 STOP TRYING TO BUILD THE LOADER AND KERNEL IN VISUAL STUDIO. THIS WILL ONLY BUILD THE .NET VERSIONS, WHICH IS NO GOOD. THEY NEED TO BE PUBLISHED SO THAT CORERT CAN COMPILE THEM TO NATIVE BINARIES. PUBLISHING THEM ALSO BUILDS THEM.
