@@ -7,6 +7,6 @@ public class EntryPoint {
 	[NativeCallable(EntryPoint = "kernel_main")]
 	public static unsafe void KernelMain(IntPtr pFb) {
 		var fb = Unsafe.As<IntPtr, FrameBuffer>(ref pFb);
-		fb.Fill(fb.MakePixel(0, 0, 255));
+		fb.Fill(fb.MakePixel(50, 150, 255));
 	}
 }

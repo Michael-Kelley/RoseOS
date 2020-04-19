@@ -27,19 +27,19 @@ public class FrameBuffer {
 		set { ((uint*)_ptr)[index] = value; }
 	}
 
-	public unsafe uint this[uint x, uint y] {
+	public unsafe uint this[int x, int y] {
 		get => ((uint*)_ptr)[y * Width + x];
 		set { ((uint*)_ptr)[y * Width + x] = value; }
 	}
 
 	public void Clear() {
 		// TODO: Make this faster using ulong (fill length / 2, check if length % 2 == 1, if so set last uint)
-		for (var i = 0u; i < _len; i++)
+		for (var i = 0u; i < _len / 4; i++)
 			this[i] = 0;
 	}
 
 	public void Fill(uint value) {
-		for (var i = 0u; i < _len; i++)
+		for (var i = 0u; i < _len / 4; i++)
 			this[i] = value;
 	}
 
