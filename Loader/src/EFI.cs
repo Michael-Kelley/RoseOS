@@ -1,554 +1,617 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Internal.Runtime.CompilerServices;
+using NativeTypeWrappers;
 
+namespace EFI {
+	public enum Status : ulong {
+		Error = 0x8000000000000000,
 
-public enum EFI_STATUS : ulong {
-	Error = 0x8000000000000000,
+		Success = 0,
 
-	Success = 0,
-
-	BufferTooSmall = 5 | Error,
-}
-
-public enum EFI_ALLOCATE_TYPE : uint {
-	AnyPages,
-	MaxAddress,
-	Address
-}
-
-public enum EFI_MEMORY_TYPE : uint {
-	ReservedMemoryType,
-	LoaderCode,
-	LoaderData,
-	BootServicesCode,
-	BootServicesData,
-	RuntimeServicesCode,
-	RuntimeServicesData,
-	ConventionalMemory,
-	UnusableMemory,
-	ACPIReclaimMemory,
-	ACPIMemoryNVS,
-	MemoryMappedIO,
-	MemoryMappedIOPortSpace,
-	PalCode
-}
-
-[Flags]
-public enum EFI_FILE_MODE : ulong {
-	Read = 1,
-	Write = 2,
-	Create = 0x8000000000000000
-}
-
-[Flags]
-public enum EFI_FILE_ATTR : ulong {
-	ReadOnly = 1,
-	Hidden = 2,
-	System = 4,
-	Reserved = 8,
-	Directory = 16,
-	Archive = 32,
-
-	ValidAttr = ReadOnly | Hidden | System | Directory | Archive
-}
-
-public enum EFI_GRAPHICS_PIXEL_FORMAT {
-	RedGreenBlueReserved8BitPerColor,
-	BlueGreenRedReserved8BitPerColor,
-	BitMask,
-	BltOnly
-}
-
-public enum EFI_LOCATE_SEARCH_TYPE {
-	AllHandles,
-	ByRegisterNotify,
-	ByProtocol
-}
-
-
-[StructLayout(LayoutKind.Sequential)]
-public struct EFI_HANDLE {
-	private IntPtr _handle;
-
-	public static EFI_HANDLE Zero = new EFI_HANDLE { _handle = IntPtr.Zero };
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct EFI_TABLE_HEADER {
-	public readonly ulong Signature;
-	public readonly uint Revision;
-	public readonly uint HeaderSize;
-	public readonly uint Crc32;
-	public readonly uint Reserved;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_SYSTEM_TABLE {
-	public readonly EFI_TABLE_HEADER Hdr;
-	public readonly char* FirmwareVendor;
-	public readonly uint FirmwareRevision;
-	public readonly EFI_HANDLE ConsoleInHandle;
-	public readonly EFI_SIMPLE_TEXT_INPUT_PROTOCOL* ConIn;
-	public readonly EFI_HANDLE ConsoleOutHandle;
-	public readonly EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* ConOut;
-	public readonly EFI_HANDLE StandardErrorHandle;
-	public readonly EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* StdErr;
-	public readonly EFI_RUNTIME_SERVICES* RuntimeServices;
-	public readonly EFI_BOOT_SERVICES* BootServices;
-	public readonly ulong NumberOfTableEntries;
-	public readonly void* ConfigurationTable;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_RUNTIME_SERVICES {
-	public readonly EFI_TABLE_HEADER Hdr;
-	private readonly IntPtr _GetTime;
-	private readonly IntPtr _SetTime;
-	private readonly IntPtr _GetWakeupTime;
-	private readonly IntPtr _SetWakeupTime;
-	private readonly IntPtr _SetVirtualAddressMap;
-	private readonly IntPtr _ConvertPointer;
-	private readonly IntPtr _GetVariable;
-	private readonly IntPtr _GetNextVariableName;
-	private readonly IntPtr _SetVariable;
-	private readonly IntPtr _GetNextHighMonotonicCount;
-	private readonly IntPtr _ResetSystem;
-	private readonly IntPtr _UpdateCapsule;
-	private readonly IntPtr _QueryCapsuleCapabilities;
-	private readonly IntPtr _QueryVariableInfo;
-
-	public ulong GetTime(out EFI_TIME time, out EFI_TIME_CAPABILITIES capabilities) {
-		fixed (EFI_TIME* timeAddress = &time)
-		fixed (EFI_TIME_CAPABILITIES* capabilitiesAddress = &capabilities)
-			return RawCalliHelper.StdCall(_GetTime, timeAddress, capabilitiesAddress);
-	}
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct EFI_TIME {
-	public ushort Year;
-	public byte Month;
-	public byte Day;
-	public byte Hour;
-	public byte Minute;
-	public byte Second;
-	public byte Pad1;
-	public uint Nanosecond;
-	public short TimeZone;
-	public byte Daylight;
-	public byte PAD2;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct SIMPLE_TEXT_OUTPUT_MODE {
-	public readonly int MaxMode;
-	public readonly int Mode;
-	public readonly int Attribute;
-	public readonly int CursorColumn;
-	public readonly int CursorRow;
-	public readonly bool CursorVisible;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct EFI_TIME_CAPABILITIES {
-	public uint Resolution;
-	public uint Accuracy;
-	public bool SetsToZero;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct EFI_INPUT_KEY {
-	public readonly ushort ScanCode;
-	public readonly ushort UnicodeChar;
-}
-
-public readonly struct EFI_EVENT {
-	private readonly IntPtr _value;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL {
-	readonly IntPtr _reset;
-	readonly IntPtr _readKeyStroke;
-
-	public readonly EFI_EVENT WaitForKey;
-
-	public void Reset(void* handle, bool ExtendedVerification) {
-		RawCalliHelper.StdCall(_reset, (byte*)handle, ExtendedVerification);
+		BufferTooSmall = 5 | Error,
 	}
 
-	public EFI_STATUS ReadKeyStroke(void* handle, EFI_INPUT_KEY* Key)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_readKeyStroke, (byte*)handle, Key);
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_BOOT_SERVICES {
-	readonly EFI_TABLE_HEADER Hdr;
-
-	readonly IntPtr _RaiseTPL;
-	readonly IntPtr _RestoreTPL;
-	readonly IntPtr _AllocatePages;
-	readonly IntPtr _FreePages;
-	readonly IntPtr _GetMemoryMap;
-	readonly IntPtr _AllocatePool;
-	readonly IntPtr _FreePool;
-	readonly IntPtr _CreateEvent;
-	readonly IntPtr _SetTimer;
-	readonly IntPtr _WaitForEvent;
-	readonly IntPtr _SignalEvent;
-	readonly IntPtr _CloseEvent;
-	readonly IntPtr _CheckEvent;
-	readonly IntPtr _InstallProtocolInterface;
-	readonly IntPtr _ReinstallProtocolInterface;
-	readonly IntPtr _UninstallProtocolInterface;
-	readonly IntPtr _HandleProtocol;
-	readonly IntPtr _Reserved;
-	readonly IntPtr _RegisterProtocolNotify;
-	readonly IntPtr _LocateHandle;
-	readonly IntPtr _LocateDevicePath;
-	readonly IntPtr _InstallConfigurationTable;
-	readonly IntPtr _LoadImage;
-	readonly IntPtr _StartImage;
-	readonly IntPtr _Exit;
-	readonly IntPtr _UnloadImage;
-	readonly IntPtr _ExitBootServices;
-	readonly IntPtr _GetNextMonotonicCount;
-	readonly IntPtr _Stall;
-	readonly IntPtr _SetWatchdogTimer;
-	readonly IntPtr _ConnectController;
-	readonly IntPtr _DisconnectController;
-	readonly IntPtr _OpenProtocol;
-	readonly IntPtr _CloseProtocol;
-	readonly IntPtr _OpenProtocolInformation;
-	readonly IntPtr _ProtocolsPerHandle;
-	readonly IntPtr _LocateHandleBuffer;
-	readonly IntPtr _LocateProtocol;
-	readonly IntPtr _InstallMultipleProtocolInterfaces;
-	readonly IntPtr _UninstallMultipleProtocolInterfaces;
-	readonly IntPtr _CalculateCrc32;
-	readonly IntPtr _CopyMem;
-	readonly IntPtr _SetMem;
-	readonly IntPtr _CreateEventEx;
-
-
-	public EFI_STATUS WaitForEvent(uint count, EFI_EVENT* events, uint* index)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_WaitForEvent, count, events, index);
-
-	public EFI_STATUS WaitForSingleEvent(EFI_EVENT evt) {
-		uint i = 0;
-
-		return WaitForEvent(1, &evt, &i);
+	public enum AllocateType : uint {
+		AnyPages,
+		MaxAddress,
+		Address
 	}
 
-	public EFI_STATUS Stall(uint Microseconds)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_Stall, Microseconds);
-
-	public EFI_STATUS AllocatePool(EFI_MEMORY_TYPE type, ulong size, IntPtr* buf)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_AllocatePool, type, size, buf);
-
-	public EFI_STATUS AllocatePages(EFI_ALLOCATE_TYPE type, EFI_MEMORY_TYPE memType, ulong pages, IntPtr mem)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_AllocatePages, type, memType, pages, mem);
-
-	public EFI_STATUS FreePool(IntPtr buf)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_FreePool, buf);
-
-	public void CopyMem(IntPtr dst, IntPtr src, ulong length)
-		=> RawCalliHelper.StdCall(_CopyMem, dst, src, length);
-
-	public void SetMem(IntPtr buf, ulong size, byte val)
-		=> RawCalliHelper.StdCall(_SetMem, buf, size, val);
-
-	public EFI_STATUS SetWatchdogTimer(ulong timeout, ulong code, ulong dataSize = 0, char* data = null)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetWatchdogTimer, timeout, code, dataSize, data);
-
-	public EFI_STATUS OpenProtocol<T>(EFI_HANDLE handle, ref EFI_GUID protocol, out T* iface, EFI_HANDLE agent, EFI_HANDLE controller, uint attr) where T : unmanaged {
-		fixed (EFI_GUID* pProt = &protocol)
-		fixed (T** pIface = &iface)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_OpenProtocol, handle, pProt, (IntPtr*)pIface, agent, controller, attr);
+	public enum MemoryType : uint {
+		ReservedMemoryType,
+		LoaderCode,
+		LoaderData,
+		BootServicesCode,
+		BootServicesData,
+		RuntimeServicesCode,
+		RuntimeServicesData,
+		ConventionalMemory,
+		UnusableMemory,
+		ACPIReclaimMemory,
+		ACPIMemoryNVS,
+		MemoryMappedIO,
+		MemoryMappedIOPortSpace,
+		PalCode
 	}
 
-	public EFI_STATUS GetMemoryMap(ref ulong memMapSize, EFI_MEMORY_DESCRIPTOR* memMap, out ulong mapKey, out ulong descSize, out uint descVer) {
-		fixed (ulong* pMapSize = &memMapSize)
-		fixed (ulong* pKey = &mapKey)
-		fixed (ulong* pSize = &descSize)
-		fixed (uint* pVer = &descVer)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_GetMemoryMap, pMapSize, memMap, pKey, pSize, pVer);
+	[Flags]
+	public enum FileMode : ulong {
+		Read = 1,
+		Write = 2,
+		Create = 0x8000000000000000
 	}
 
-	public EFI_STATUS ExitBootServices(EFI_HANDLE imageHandle, ulong mapKey)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_ExitBootServices, imageHandle, mapKey);
+	[Flags]
+	public enum FileAttribute : ulong {
+		ReadOnly = 1,
+		Hidden = 2,
+		System = 4,
+		Reserved = 8,
+		Directory = 16,
+		Archive = 32,
 
-	public EFI_STATUS LocateHandleBuffer(EFI_LOCATE_SEARCH_TYPE searchType, ref EFI_GUID protocol, IntPtr searchKey, ref ulong numHandles, out EFI_HANDLE* buffer) {
-		fixed (EFI_GUID* pProt = &protocol)
-		fixed (ulong* pNum = &numHandles)
-		fixed (EFI_HANDLE** pBuf = &buffer)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_LocateHandleBuffer, searchType, pProt, searchKey, pNum, (IntPtr*)pBuf);
+		ValidAttr = ReadOnly | Hidden | System | Directory | Archive
 	}
 
-	public EFI_STATUS HandleProtocol(EFI_HANDLE handle, ref EFI_GUID protocol, out IntPtr iface) {
-		fixed (EFI_GUID* pProt = &protocol)
-		fixed (IntPtr* pIface = &iface)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_HandleProtocol, handle, pProt, pIface);
+	public enum GraphicsPixelFormat {
+		RedGreenBlueReserved8BitPerColor,
+		BlueGreenRedReserved8BitPerColor,
+		BitMask,
+		BltOnly
 	}
 
-	public EFI_STATUS CloseProtocol(EFI_HANDLE handle, ref EFI_GUID protocol, EFI_HANDLE agent, EFI_HANDLE controller) {
-		fixed (EFI_GUID* pProt = &protocol)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_CloseProtocol, handle, pProt, agent, controller);
-	}
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {
-	private readonly IntPtr _reset;
-	private readonly IntPtr _outputString;
-	private readonly IntPtr _testString;
-	private readonly IntPtr _queryMode;
-	private readonly IntPtr _setMode;
-	private readonly IntPtr _setAttribute;
-	private readonly IntPtr _clearScreen;
-	private readonly IntPtr _setCursorPosition;
-	private readonly IntPtr _enableCursor;
-
-	public readonly SIMPLE_TEXT_OUTPUT_MODE* Mode;
-
-	public void Reset(void* handle, bool ExtendedVerification) {
-		RawCalliHelper.StdCall(_reset, (byte*)handle, &ExtendedVerification);
+	public enum LocateSearchType {
+		AllHandles,
+		ByRegisterNotify,
+		ByProtocol
 	}
 
-	public ulong OutputString(void* handle, char* str)
-		=> RawCalliHelper.StdCall(_outputString, (byte*)handle, str);
 
-	public ulong TestString(void* handle, char* str)
-		=> RawCalliHelper.StdCall(_testString, (byte*)handle, str);
+	public readonly struct Handle {
+		readonly IntPtr _pointer;
 
-	public void QueryMode(void* handle, uint ModeNumber, uint* Columns, uint* Rows) {
-		RawCalliHelper.StdCall(_queryMode, (byte*)handle, &ModeNumber, Columns, Rows);
+		public Handle(IntPtr ptr) { _pointer = ptr; }
+
+		public static readonly Handle Zero = new Handle(IntPtr.Zero);
 	}
 
-	public void SetMode(void* handle, uint ModeNumber) {
-		RawCalliHelper.StdCall(_setMode, (byte*)handle, &ModeNumber);
+	public readonly struct Event {
+		readonly IntPtr _value;
 	}
 
-	public void SetAttribute(void* handle, uint Attribute) {
-		RawCalliHelper.StdCall(_setAttribute, (byte*)handle, Attribute);
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct TableHeader {
+		public readonly ulong Signature;
+		public readonly uint Revision;
+		public readonly uint HeaderSize;
+		public readonly uint Crc32;
+		public readonly uint Reserved;
 	}
 
-	public void ClearScreen(void* handle) {
-		RawCalliHelper.StdCall(_clearScreen, (byte*)handle);
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct SystemTable {
+		public readonly TableHeader Hdr;
+		public readonly ReadonlyNativeString FirmwareVendor;
+		public readonly uint FirmwareRevision;
+		public readonly Handle ConsoleInHandle;
+		public readonly ReadonlyNativeReference<SimpleTextInputProtocol> ConIn;
+		public readonly Handle ConsoleOutHandle;
+		public readonly ReadonlyNativeReference<SimpleTextOutputProtocol> ConOut;
+		public readonly Handle StandardErrorHandle;
+		public readonly ReadonlyNativeReference<SimpleTextOutputProtocol> StdErr;
+		public readonly ReadonlyNativeReference<RuntimeServices> RuntimeServices;
+		public readonly ReadonlyNativeReference<BootServices> BootServices;
+		public readonly ulong NumberOfTableEntries;
+		public readonly IntPtr ConfigurationTable;
 	}
 
-	public void SetCursorPosition(void* handle, uint Column, uint Row) {
-		RawCalliHelper.StdCall(_setCursorPosition, (byte*)handle, Column, Row);
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct RuntimeServices {
+		public readonly TableHeader Hdr;
+
+		readonly IntPtr _GetTime;
+		readonly IntPtr _SetTime;
+		readonly IntPtr _GetWakeupTime;
+		readonly IntPtr _SetWakeupTime;
+		readonly IntPtr _SetVirtualAddressMap;
+		readonly IntPtr _ConvertPointer;
+		readonly IntPtr _GetVariable;
+		readonly IntPtr _GetNextVariableName;
+		readonly IntPtr _SetVariable;
+		readonly IntPtr _GetNextHighMonotonicCount;
+		readonly IntPtr _ResetSystem;
+		readonly IntPtr _UpdateCapsule;
+		readonly IntPtr _QueryCapsuleCapabilities;
+		readonly IntPtr _QueryVariableInfo;
+
+
+		public unsafe ulong GetTime(out Time time, out TimeCapabilities capabilities) {
+			fixed (Time* timeAddress = &time)
+			fixed (TimeCapabilities* capabilitiesAddress = &capabilities)
+				return RawCalliHelper.StdCall(_GetTime, timeAddress, capabilitiesAddress);
+		}
 	}
 
-	public void EnableCursor(void* handle, bool Visible) {
-		RawCalliHelper.StdCall(_enableCursor, (byte*)handle, Visible);
-	}
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct EFI_GUID {
-	public uint Data1;
-	public ushort Data2;
-	public ushort Data3;
-	public fixed byte Data4[8];
-
-	public EFI_GUID(uint d1, ushort d2, ushort d3, byte[] d4) {
-		Data1 = d1;
-		Data2 = d2;
-		Data3 = d3;
-
-		fixed (byte* dst = Data4)
-		fixed (byte* src = d4)
-			Platform.CopyMemory((IntPtr)dst, (IntPtr)src, 8);
-
-		d4.Dispose();
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Time {
+		public ushort Year;
+		public byte Month;
+		public byte Day;
+		public byte Hour;
+		public byte Minute;
+		public byte Second;
+		public byte Pad1;
+		public uint Nanosecond;
+		public short TimeZone;
+		public byte Daylight;
+		public byte PAD2;
 	}
 
-	public static EFI_GUID LoadedImageProtocol;
-	public static EFI_GUID SimpleFileSystemProtocol;
-	public static EFI_GUID FileInfo;
-	public static EFI_GUID GraphicsOutputProtocol;
-	public static EFI_GUID ComponentName2Protocol;
-
-	internal static void Initialise() {
-		LoadedImageProtocol = new EFI_GUID(0x5B1B31A1, 0x9562, 0x11d2, new byte[] { 0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B });
-		SimpleFileSystemProtocol = new EFI_GUID(0x964e5b22, 0x6459, 0x11d2, new byte[] { 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
-		FileInfo = new EFI_GUID(0x09576e92, 0x6d3f, 0x11d2, new byte[] { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
-		GraphicsOutputProtocol = new EFI_GUID(0x9042a9de, 0x23dc, 0x4a38, new byte[] { 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a });
-		ComponentName2Protocol = new EFI_GUID(0x6a7a5cff, 0xe8d9, 0x4f70, new byte[] { 0xba, 0xda, 0x75, 0xab, 0x30, 0x25, 0xce, 0x14 });
-	}
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_FILE_PROTOCOL {
-	public readonly ulong Revision;
-
-	readonly IntPtr _Open;
-	readonly IntPtr _Close;
-	readonly IntPtr _Delete;
-	readonly IntPtr _Read;
-	readonly IntPtr _Write;
-	readonly IntPtr _GetPosition;
-	readonly IntPtr _SetPosition;
-	readonly IntPtr _GetInfo;
-	readonly IntPtr _SetInfo;
-	readonly IntPtr _Flush;
-	readonly IntPtr _OpenEx;
-	readonly IntPtr _ReadEx;
-	readonly IntPtr _WriteEx;
-	readonly IntPtr _FlushEx;
-
-
-	public EFI_STATUS Open(EFI_FILE_PROTOCOL* handle, out EFI_FILE_PROTOCOL* newHandle, string filename, EFI_FILE_MODE mode, EFI_FILE_ATTR attr) {
-		fixed (EFI_FILE_PROTOCOL** ptr = &newHandle)
-		fixed (char* f = &filename._firstChar)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_Open, handle, (IntPtr*)ptr, f, mode, attr);
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct SimpleTextOutputMode {
+		public readonly int MaxMode;
+		public readonly int Mode;
+		public readonly int Attribute;
+		public readonly int CursorColumn;
+		public readonly int CursorRow;
+		public readonly bool CursorVisible;
 	}
 
-	public EFI_STATUS GetInfo(EFI_FILE_PROTOCOL* handle, ref EFI_GUID type, ref ulong bufSize, out EFI_FILE_INFO buf) {
-		fixed (EFI_GUID* pType = &type)
-		fixed (ulong* pSize = &bufSize)
-		fixed (EFI_FILE_INFO* pBuf = &buf)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_GetInfo, handle, pType, pSize, pBuf);
+	[StructLayout(LayoutKind.Sequential)]
+	public struct TimeCapabilities {
+		public uint Resolution;
+		public uint Accuracy;
+		public bool SetsToZero;
 	}
 
-	public EFI_STATUS Read(EFI_FILE_PROTOCOL* handle, ref ulong bufSize, byte* buf) {
-		fixed (ulong* pSize = &bufSize)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_Read, handle, pSize, buf);
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct InputKey {
+		public readonly ushort ScanCode;
+		public readonly ushort UnicodeChar;
 	}
 
-	public EFI_STATUS SetPosition(EFI_FILE_PROTOCOL* handle, ulong pos)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetPosition, handle, pos);
-}
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct SimpleTextInputProtocol {
+		readonly IntPtr _Reset;
+		readonly IntPtr _readKeyStroke;
 
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_LOADED_IMAGE_PROTOCOL {
-	public readonly uint Revision;
-	public readonly EFI_HANDLE ParentHandle;
-	public readonly EFI_SYSTEM_TABLE* SystemTable;
-	public readonly EFI_HANDLE DeviceHandle;
-	//public readonly EFI_DEVICE_PATH_PROTOCOL* FilePath;
-	public readonly IntPtr FilePath;
-	public readonly IntPtr Reserved;
-	public readonly uint LoadOptionsSize;
-	public readonly IntPtr LoadOptions;
-	public readonly IntPtr ImageBase;
-	public readonly ulong ImageSize;
-	public readonly EFI_MEMORY_TYPE ImageCodeType;
-	public readonly EFI_MEMORY_TYPE ImageDataType;
-
-	public readonly IntPtr _Unload;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
-	public readonly ulong Revision;
-
-	readonly IntPtr _OpenVolume;
+		public readonly Event WaitForKey;
 
 
-	public EFI_STATUS OpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* handle, out EFI_FILE_PROTOCOL* root) {
-		fixed (EFI_FILE_PROTOCOL** ptr = &root)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_OpenVolume, handle, (IntPtr*)ptr);
-	}
-}
+		public unsafe void Reset(bool ExtendedVerification) {
+			fixed (SimpleTextInputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_Reset, _this, ExtendedVerification);
+		}
 
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct EFI_FILE_INFO {
-	public ulong Size;
-	public ulong FileSize;
-	public ulong PhysicalSize;
-	public EFI_TIME CreateTime;
-	public EFI_TIME LastAccessTime;
-	public EFI_TIME ModificationTime;
-	public ulong Attribute;
-	public fixed char FileName[128];
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct EFI_MEMORY_DESCRIPTOR {
-	public readonly uint Type;
-	public readonly ulong PhysicalStart;
-	public readonly ulong VirtualStart;
-	public readonly ulong NumberOfPages;
-	public readonly ulong Attribute;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct EFI_PIXEL_BITMASK {
-	public readonly uint RedMask;
-	public readonly uint GreenMask;
-	public readonly uint BlueMask;
-	public readonly uint ReservedMask;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct EFI_GRAPHICS_OUTPUT_MODE_INFORMATION {
-	public readonly uint Version;
-	public readonly uint HorizontalResolution;
-	public readonly uint VeticalResolution;
-	public readonly EFI_GRAPHICS_PIXEL_FORMAT PixelFormat;
-	public readonly EFI_PIXEL_BITMASK PixelInformation;
-	public readonly uint PixelsPerScanLine;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly unsafe struct EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE {
-	public readonly uint MaxMode;
-	public readonly uint Mode;
-	public readonly EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* Info;
-	public readonly ulong SizeOfInfo;
-	public readonly ulong FrameBufferBase;
-	public readonly ulong FrameBufferSize;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public readonly unsafe struct EFI_GRAPHICS_OUTPUT_PROTOCOL {
-	readonly IntPtr _QueryMode;
-	readonly IntPtr _SetMode;
-	readonly IntPtr _Blt;
-
-	public readonly EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE* Mode;
-
-	public EFI_STATUS QueryMode(EFI_GRAPHICS_OUTPUT_PROTOCOL* ptr, uint modeNumber, out ulong sizeOfInfo, out EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info) {
-		fixed (ulong* pSize = &sizeOfInfo)
-		fixed (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION** pInfo = &info)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_QueryMode, ptr, modeNumber, pSize, (IntPtr*)pInfo);
+		public unsafe Status ReadKeyStroke(out InputKey Key) {
+			fixed (SimpleTextInputProtocol* _this = &this)
+			fixed (InputKey* _key = &Key)
+				return (Status)RawCalliHelper.StdCall(_readKeyStroke, _this, _key);
+		}
 	}
 
-	public EFI_STATUS SetMode(EFI_GRAPHICS_OUTPUT_PROTOCOL* ptr, uint mode)
-		=> (EFI_STATUS)RawCalliHelper.StdCall(_SetMode, ptr, mode);
-}
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct BootServices {
+		public readonly TableHeader Hdr;
 
-[StructLayout(LayoutKind.Sequential)]
-public readonly unsafe struct EFI_COMPONENT_NAME2_PROTOCOL {
-	readonly IntPtr _GetDriverName;
-	readonly IntPtr _GetControllerName;
+		readonly IntPtr _RaiseTPL;
+		readonly IntPtr _RestoreTPL;
+		readonly IntPtr _AllocatePages;
+		readonly IntPtr _FreePages;
+		readonly IntPtr _GetMemoryMap;
+		readonly IntPtr _AllocatePool;
+		readonly IntPtr _FreePool;
+		readonly IntPtr _CreateEvent;
+		readonly IntPtr _SetTimer;
+		readonly IntPtr _WaitForEvent;
+		readonly IntPtr _SignalEvent;
+		readonly IntPtr _CloseEvent;
+		readonly IntPtr _CheckEvent;
+		readonly IntPtr _InstallProtocolInterface;
+		readonly IntPtr _ReinstallProtocolInterface;
+		readonly IntPtr _UninstallProtocolInterface;
+		readonly IntPtr _HandleProtocol;
+		readonly IntPtr _Reserved;
+		readonly IntPtr _RegisterProtocolNotify;
+		readonly IntPtr _LocateHandle;
+		readonly IntPtr _LocateDevicePath;
+		readonly IntPtr _InstallConfigurationTable;
+		readonly IntPtr _LoadImage;
+		readonly IntPtr _StartImage;
+		readonly IntPtr _Exit;
+		readonly IntPtr _UnloadImage;
+		readonly IntPtr _ExitBootServices;
+		readonly IntPtr _GetNextMonotonicCount;
+		readonly IntPtr _Stall;
+		readonly IntPtr _SetWatchdogTimer;
+		readonly IntPtr _ConnectController;
+		readonly IntPtr _DisconnectController;
+		readonly IntPtr _OpenProtocol;
+		readonly IntPtr _CloseProtocol;
+		readonly IntPtr _OpenProtocolInformation;
+		readonly IntPtr _ProtocolsPerHandle;
+		readonly IntPtr _LocateHandleBuffer;
+		readonly IntPtr _LocateProtocol;
+		readonly IntPtr _InstallMultipleProtocolInterfaces;
+		readonly IntPtr _UninstallMultipleProtocolInterfaces;
+		readonly IntPtr _CalculateCrc32;
+		readonly IntPtr _CopyMem;
+		readonly IntPtr _SetMem;
+		readonly IntPtr _CreateEventEx;
 
-	public readonly byte* SupportedLanguages;
 
-	public EFI_STATUS GetDriverName(EFI_COMPONENT_NAME2_PROTOCOL* ptr, byte* language, out char* name) {
-		fixed (char** pName = &name)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_GetDriverName, ptr, language, (IntPtr*)pName);
+		public unsafe Status WaitForEvent(ulong count, Event[] events, out ulong index) {
+			fixed (Event* _events = events)
+			fixed (ulong* _index = &index)
+				return (Status)RawCalliHelper.StdCall(_WaitForEvent, count, _events, _index);
+		}
+
+		public unsafe Status WaitForSingleEvent(Event @event) {
+			uint i = 0;
+
+			return (Status)RawCalliHelper.StdCall(_WaitForEvent, 1, &@event, &i);
+		}
+
+		public Status Stall(ulong Microseconds)
+			=> (Status)RawCalliHelper.StdCall(_Stall, Microseconds);
+
+		// TODO: Figure out how to get rid of this pointer
+		public unsafe Status AllocatePool(MemoryType type, ulong size, IntPtr* buf) {
+			return (Status)RawCalliHelper.StdCall(_AllocatePool, type, size, buf);
+		}
+
+		public unsafe Status AllocatePages(AllocateType type, MemoryType memType, ulong pages, ref IntPtr addr) {
+			fixed (IntPtr* _addr = &addr)
+				return (Status)RawCalliHelper.StdCall(_AllocatePages, type, memType, pages, _addr);
+		}
+
+		public Status FreePool(IntPtr buf)
+			=> (Status)RawCalliHelper.StdCall(_FreePool, buf);
+
+		public Status FreePool<T>(T[] arr)
+			=> (Status)RawCalliHelper.StdCall(_FreePool, Unsafe.As<T[], IntPtr>(ref arr));
+
+		public void CopyMem(IntPtr dst, IntPtr src, ulong length)
+			=> RawCalliHelper.StdCall(_CopyMem, dst, src, length);
+
+		public void SetMem(IntPtr buf, ulong size, byte val)
+			=> RawCalliHelper.StdCall(_SetMem, buf, size, val);
+
+		public Status SetWatchdogTimer(ulong timeout, ulong code, ulong dataSize, IntPtr data)
+			=> (Status)RawCalliHelper.StdCall(_SetWatchdogTimer, timeout, code, dataSize, data);
+
+		public unsafe Status OpenProtocol<T>(Handle handle, ref Guid protocol, out ReadonlyNativeReference<T> iface, Handle agent, Handle controller, uint attr) where T : unmanaged {
+			fixed (Guid* _protocol = &protocol)
+			fixed (ReadonlyNativeReference<T>* _iface = &iface)
+				return (Status)RawCalliHelper.StdCall(_OpenProtocol, handle, _protocol, _iface, agent, controller, attr);
+		}
+
+		public unsafe Status GetMemoryMap(ref ulong memMapSize, MemoryDescriptor[] memMap, out ulong mapKey, out ulong descSize, out uint descVer) {
+			fixed (ulong* _memMapSize = &memMapSize)
+			fixed (MemoryDescriptor* _memMap = memMap)
+			fixed (ulong* _mapKey = &mapKey)
+			fixed (ulong* _descSize = &descSize)
+			fixed (uint* _descVer = &descVer)
+				return (Status)RawCalliHelper.StdCall(_GetMemoryMap, _memMapSize, _memMap, _mapKey, _descSize, _descVer);
+		}
+
+		public Status ExitBootServices(Handle imageHandle, ulong mapKey)
+			=> (Status)RawCalliHelper.StdCall(_ExitBootServices, imageHandle, mapKey);
+
+		// TODO: Get rid of the out Handle* and use an out Handle[] or out NativeArray<Handle> instead
+		public unsafe Status LocateHandleBuffer(LocateSearchType searchType, ref Guid protocol, IntPtr searchKey, ref ulong numHandles, out NativeArray<Handle> buffer) {
+			fixed (Guid* _protocol = &protocol)
+			fixed (ulong* _numHandles = &numHandles)
+			fixed (NativeArray<Handle>* _buffer = &buffer)
+				return (Status)RawCalliHelper.StdCall(_LocateHandleBuffer, searchType, _protocol, searchKey, _numHandles, _buffer);
+		}
+
+		public unsafe Status HandleProtocol(Handle handle, ref Guid protocol, out IntPtr iface) {
+			fixed (Guid* _protocol = &protocol)
+			fixed (IntPtr* _iface = &iface)
+				return (Status)RawCalliHelper.StdCall(_HandleProtocol, handle, _protocol, _iface);
+		}
+
+		public unsafe Status CloseProtocol(Handle handle, ref Guid protocol, Handle agent, Handle controller) {
+			fixed (Guid* pProt = &protocol)
+				return (Status)RawCalliHelper.StdCall(_CloseProtocol, handle, pProt, agent, controller);
+		}
 	}
 
-	public EFI_STATUS GetControllerName(EFI_COMPONENT_NAME2_PROTOCOL* ptr, EFI_HANDLE controller, EFI_HANDLE child, byte* language, out char* name) {
-		fixed (char** pName = &name)
-			return (EFI_STATUS)RawCalliHelper.StdCall(_GetControllerName, ptr, controller, child, language, (IntPtr*)pName);
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe readonly struct SimpleTextOutputProtocol {
+		private readonly IntPtr _Reset;
+		private readonly IntPtr _OutputString;
+		private readonly IntPtr _TestString;
+		private readonly IntPtr _QueryMode;
+		private readonly IntPtr _SetMode;
+		private readonly IntPtr _SetAttribute;
+		private readonly IntPtr _ClearScreen;
+		private readonly IntPtr _SetCursorPosition;
+		private readonly IntPtr _EnableCursor;
+
+		public readonly SimpleTextOutputMode* Mode;
+
+		public void Reset(bool ExtendedVerification) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_Reset, _this, &ExtendedVerification);
+		}
+
+		public ulong OutputString(char* str) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				return RawCalliHelper.StdCall(_OutputString, _this, str);
+		}
+
+		public ulong TestString(char* str) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				return RawCalliHelper.StdCall(_TestString, _this, str);
+		}
+
+		public void QueryMode(uint ModeNumber, uint* Columns, uint* Rows) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_QueryMode, _this, &ModeNumber, Columns, Rows);
+		}
+
+		public void SetMode(uint ModeNumber) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_SetMode, _this, &ModeNumber);
+		}
+
+		public void SetAttribute(uint Attribute) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_SetAttribute, _this, Attribute);
+		}
+
+		public void ClearScreen() {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_ClearScreen, _this);
+		}
+
+		public void SetCursorPosition(uint Column, uint Row) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_SetCursorPosition, _this, Column, Row);
+		}
+
+		public void EnableCursor(bool Visible) {
+			fixed (SimpleTextOutputProtocol* _this = &this)
+				RawCalliHelper.StdCall(_EnableCursor, _this, Visible);
+		}
 	}
-}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct Guid {
+		public uint Data1;
+		public ushort Data2;
+		public ushort Data3;
+		public fixed byte Data4[8];
+
+		public Guid(uint d1, ushort d2, ushort d3, byte[] d4) {
+			Data1 = d1;
+			Data2 = d2;
+			Data3 = d3;
+
+			fixed (byte* dst = Data4)
+			fixed (byte* src = d4)
+				Platform.CopyMemory((IntPtr)dst, (IntPtr)src, 8);
+
+			d4.Dispose();
+		}
+
+		public static Guid LoadedImageProtocol;
+		public static Guid SimpleFileSystemProtocol;
+		public static Guid FileInfo;
+		public static Guid GraphicsOutputProtocol;
+		public static Guid ComponentName2Protocol;
+
+		internal static void Initialise() {
+			LoadedImageProtocol = new Guid(0x5B1B31A1, 0x9562, 0x11d2, new byte[] { 0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B });
+			SimpleFileSystemProtocol = new Guid(0x964e5b22, 0x6459, 0x11d2, new byte[] { 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
+			FileInfo = new Guid(0x09576e92, 0x6d3f, 0x11d2, new byte[] { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b });
+			GraphicsOutputProtocol = new Guid(0x9042a9de, 0x23dc, 0x4a38, new byte[] { 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a });
+			ComponentName2Protocol = new Guid(0x6a7a5cff, 0xe8d9, 0x4f70, new byte[] { 0xba, 0xda, 0x75, 0xab, 0x30, 0x25, 0xce, 0x14 });
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct FileProtocol {
+		public readonly ulong Revision;
+
+		readonly IntPtr _Open;
+		readonly IntPtr _Close;
+		readonly IntPtr _Delete;
+		readonly IntPtr _Read;
+		readonly IntPtr _Write;
+		readonly IntPtr _GetPosition;
+		readonly IntPtr _SetPosition;
+		readonly IntPtr _GetInfo;
+		readonly IntPtr _SetInfo;
+		readonly IntPtr _Flush;
+		readonly IntPtr _OpenEx;
+		readonly IntPtr _ReadEx;
+		readonly IntPtr _WriteEx;
+		readonly IntPtr _FlushEx;
+
+		public unsafe Status Open(out ReadonlyNativeReference<FileProtocol> newHandle, string filename, FileMode mode, FileAttribute attr) {
+			fixed (FileProtocol* _this = &this)
+			fixed (ReadonlyNativeReference<FileProtocol>* _newHandle = &newHandle)
+			fixed (char* f = &filename._firstChar)
+				return (Status)RawCalliHelper.StdCall(_Open, _this, _newHandle, f, mode, attr);
+		}
+
+		public unsafe Status Close() {
+			fixed (FileProtocol* _this = &this)
+				return (Status)RawCalliHelper.StdCall(_Close, _this);
+		}
+
+		public unsafe Status GetInfo(ref Guid type, ref ulong bufSize, out FileInfo buf) {
+			fixed (FileProtocol* _this = &this)
+			fixed (Guid* _type = &type)
+			fixed (ulong* _bufSize = &bufSize)
+			fixed (FileInfo* _buf = &buf)
+				return (Status)RawCalliHelper.StdCall(_GetInfo, _this, _type, _bufSize, _buf);
+		}
+
+		public unsafe Status Read(ref ulong bufSize, IntPtr buf) {
+			fixed (FileProtocol* _this = &this)
+			fixed (ulong* _bufSize = &bufSize)
+				return (Status)RawCalliHelper.StdCall(_Read, _this, _bufSize, buf);
+		}
+
+		public unsafe Status Read<T>(out T obj) where T : unmanaged {
+			var len = (ulong)Unsafe.SizeOf<T>();
+			obj = default;
+
+			fixed (T* _obj = &obj)
+				return Read(ref len, (IntPtr)_obj);
+		}
+
+		public unsafe Status Read<T>(out T[] arr, int count) where T : unmanaged {
+			var len = (ulong)count * (ulong)Unsafe.SizeOf<T>();
+			arr = new T[count];
+
+			fixed (T* _arr = arr)
+				return Read(ref len, (IntPtr)_arr);
+		}
+
+		public unsafe Status SetPosition(ulong pos) {
+			fixed (FileProtocol* _this = &this)
+				return (Status)RawCalliHelper.StdCall(_SetPosition, _this, pos);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe readonly struct LoadedImageProtocol {
+		public readonly uint Revision;
+		public readonly Handle ParentHandle;
+		public readonly SystemTable* SystemTable;
+		public readonly Handle DeviceHandle;
+		//public readonly EFI_DEVICE_PATH_PROTOCOL* FilePath;
+		public readonly IntPtr FilePath;
+		public readonly IntPtr Reserved;
+		public readonly uint LoadOptionsSize;
+		public readonly IntPtr LoadOptions;
+		public readonly IntPtr ImageBase;
+		public readonly ulong ImageSize;
+		public readonly MemoryType ImageCodeType;
+		public readonly MemoryType ImageDataType;
+
+		public readonly IntPtr _Unload;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct SimpleFileSystemProtocol {
+		public readonly ulong Revision;
+
+		readonly IntPtr _OpenVolume;
 
 
-public unsafe static class EFI {
-	public const uint OPEN_PROTOCOL_GET_PROTOCOL = 0x00000002;
+		public unsafe Status OpenVolume(out ReadonlyNativeReference<FileProtocol> root) {
+			fixed (SimpleFileSystemProtocol* _this = &this)
+			fixed (ReadonlyNativeReference<FileProtocol>* _root = &root)
+				return (Status)RawCalliHelper.StdCall(_OpenVolume, _this, _root);
+		}
+	}
 
-	public static EFI_SYSTEM_TABLE* ST { get; private set; }
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct FileInfo {
+		public ulong Size;
+		public ulong FileSize;
+		public ulong PhysicalSize;
+		public Time CreateTime;
+		public Time LastAccessTime;
+		public Time ModificationTime;
+		public ulong Attribute;
+		public fixed char FileName[128];
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct MemoryDescriptor {
+		public readonly uint Type;
+		public readonly ulong PhysicalStart;
+		public readonly ulong VirtualStart;
+		public readonly ulong NumberOfPages;
+		public readonly ulong Attribute;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct PixelBitMask {
+		public readonly uint RedMask;
+		public readonly uint GreenMask;
+		public readonly uint BlueMask;
+		public readonly uint ReservedMask;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct GraphicsOutputModeInformation {
+		public readonly uint Version;
+		public readonly uint HorizontalResolution;
+		public readonly uint VerticalResolution;
+		public readonly GraphicsPixelFormat PixelFormat;
+		public readonly PixelBitMask PixelInformation;
+		public readonly uint PixelsPerScanLine;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly unsafe struct GraphicsOutputProtocolMode {
+		public readonly uint MaxMode;
+		public readonly uint Mode;
+		public readonly ReadonlyNativeReference<GraphicsOutputModeInformation> Info;
+		public readonly ulong SizeOfInfo;
+		public readonly ulong FrameBufferBase;
+		public readonly ulong FrameBufferSize;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct GraphicsOutputProtocol {
+		readonly IntPtr _QueryMode;
+		readonly IntPtr _SetMode;
+		readonly IntPtr _Blt;
+
+		public readonly ReadonlyNativeReference<GraphicsOutputProtocolMode> Mode;
+
+		public unsafe Status QueryMode(uint modeNumber, out ulong sizeOfInfo, out ReadonlyNativeReference<GraphicsOutputModeInformation> info) {
+			fixed (GraphicsOutputProtocol* _this = &this)
+			fixed (ulong* _sizeOfInfo = &sizeOfInfo)
+			fixed (ReadonlyNativeReference<GraphicsOutputModeInformation>* _info = &info)
+				return (Status)RawCalliHelper.StdCall(_QueryMode, _this, modeNumber, _sizeOfInfo, _info);
+		}
+
+		public unsafe Status SetMode(uint mode) {
+			fixed (GraphicsOutputProtocol* _this = &this)
+				return (Status)RawCalliHelper.StdCall(_SetMode, _this, mode);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly unsafe struct ComponentName2Protocol {
+		readonly IntPtr _GetDriverName;
+		readonly IntPtr _GetControllerName;
+
+		public readonly byte* SupportedLanguages;
+
+		public Status GetDriverName(ComponentName2Protocol* ptr, byte* language, out char* name) {
+			fixed (char** pName = &name)
+				return (Status)RawCalliHelper.StdCall(_GetDriverName, ptr, language, (IntPtr*)pName);
+		}
+
+		public Status GetControllerName(ComponentName2Protocol* ptr, Handle controller, Handle child, byte* language, out char* name) {
+			fixed (char** pName = &name)
+				return (Status)RawCalliHelper.StdCall(_GetControllerName, ptr, controller, child, language, (IntPtr*)pName);
+		}
+	}
 
 
-	public static void Initialise(EFI_SYSTEM_TABLE* systemTable) {
-		ST = systemTable;
-		EFI_GUID.Initialise();
+	public unsafe static class EFI {
+		public const uint OPEN_PROTOCOL_GET_PROTOCOL = 0x00000002;
+
+		public static ReadonlyNativeReference<SystemTable> ST { get; private set; }
+
+
+		public static void Initialise(ReadonlyNativeReference<SystemTable> systemTable) {
+			ST = systemTable;
+			Guid.Initialise();
+		}
 	}
 }

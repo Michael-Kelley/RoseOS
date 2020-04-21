@@ -5,22 +5,24 @@ using System;
 internal static unsafe class Platform {
 	public static IntPtr Allocate(ulong size) {
 		IntPtr ptr = default;
-		EFI.ST->BootServices->AllocatePool(EFI_MEMORY_TYPE.BootServicesData, size, &ptr);
+		EFI.EFI.ST.Ref.BootServices.Ref.AllocatePool(EFI.MemoryType.BootServicesData, size, &ptr);
 
 		return ptr;
 	}
 
 	public static void Free(IntPtr buf) {
-		EFI.ST->BootServices->FreePool(buf);
+		EFI.EFI.ST.Ref.BootServices.Ref.FreePool(buf);
 	}
 
 	public unsafe static void Print(string msg) {
 		fixed (char* c = msg)
-			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, c);
+			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(c);
 	}
 
 	public unsafe static void Print(char* msg, int len) {
-		Print(new string(msg, 0, len));
+		var s = new string(msg, 0, len);
+		Print(s);
+		s.Dispose();
 	}
 
 	public unsafe static void PrintLine(string msg) {
@@ -30,7 +32,7 @@ internal static unsafe class Platform {
 		x[0] = '\r';
 		x[1] = '\n';
 		x[2] = '\0';
-		EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x);
+		EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x);
 	}
 
 	//public unsafe static void PrintLine(char* msg, int len) {
@@ -54,15 +56,15 @@ internal static unsafe class Platform {
 	//}
 
 	public static void ClearConsole() {
-		EFI.ST->ConOut->ClearScreen(EFI.ST->ConOut);
+		EFI.EFI.ST.Ref.ConOut.Ref.ClearScreen();
 	}
 
 	public static unsafe void ZeroMemory(IntPtr ptr, ulong len) {
-		EFI.ST->BootServices->SetMem(ptr, len, 0);
+		EFI.EFI.ST.Ref.BootServices.Ref.SetMem(ptr, len, 0);
 	}
 
 	public static unsafe void CopyMemory(IntPtr dst, IntPtr src, ulong len) {
-		EFI.ST->BootServices->CopyMem(dst, src, len);
+		EFI.EFI.ST.Ref.BootServices.Ref.CopyMem(dst, src, len);
 	}
 }
 

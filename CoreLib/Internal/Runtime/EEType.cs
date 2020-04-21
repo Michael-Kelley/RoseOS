@@ -797,16 +797,16 @@ namespace Internal.Runtime {
 		//	}
 		//}
 
-		//internal EEType* RawBaseType {
-		//	get {
-		//		Debug.Assert(!IsParameterizedType, "array type not supported in NonArrayBaseType");
-		//		Debug.Assert(!IsCloned, "cloned type not supported in NonClonedNonArrayBaseType");
-		//		Debug.Assert(IsCanonical, "we expect canonical types here");
-		//		Debug.Assert(!IsRelatedTypeViaIAT, "Non IAT");
+		internal EEType* RawBaseType {
+			get {
+				//Debug.Assert(!IsParameterizedType, "array type not supported in NonArrayBaseType");
+				//Debug.Assert(!IsCloned, "cloned type not supported in NonClonedNonArrayBaseType");
+				//Debug.Assert(IsCanonical, "we expect canonical types here");
+				//Debug.Assert(!IsRelatedTypeViaIAT, "Non IAT");
 
-		//		return _relatedType._pBaseType;
-		//	}
-		//}
+				return _relatedType._pBaseType;
+			}
+		}
 
 		//internal EEType* CanonicalEEType {
 		//	get {

@@ -15,8 +15,7 @@ internal static unsafe class Platform {
 	}
 
 	public unsafe static void Print(string msg) {
-		fixed (char* c = msg)
-			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, c);
+		// ..
 	}
 
 	public unsafe static void Print(char* msg, int len) {
@@ -30,7 +29,6 @@ internal static unsafe class Platform {
 		x[0] = '\r';
 		x[1] = '\n';
 		x[2] = '\0';
-		//..
 	}
 
 	//public unsafe static void PrintLine(char* msg, int len) {

@@ -16,7 +16,7 @@ namespace System {
 
 		//public static unsafe bool CursorVisible {
 		//	set {
-		//		EFI.ST->ConOut->EnableCursor(EFI.ST->ConOut, value);
+		//		EFI.ST.Ref.ConOut->EnableCursor(EFI.ST.Ref.ConOut, value);
 		//	}
 		//}
 
@@ -24,7 +24,7 @@ namespace System {
 		//	set {
 		//		s_consoleAttribute = (ushort)value;
 		//		uint color = s_consoleAttribute;
-		//		EFI.ST->ConOut->SetAttribute(EFI.ST->ConOut, color);
+		//		EFI.ST.Ref.ConOut->SetAttribute(EFI.ST.Ref.ConOut, color);
 		//	}
 		//}
 
@@ -34,7 +34,7 @@ namespace System {
 		//			return true;
 
 		//		EFI_INPUT_KEY key;
-		//		var errorCode = EFI.ST->ConIn->ReadKeyStroke(EFI.ST->ConIn, &key);
+		//		var errorCode = EFI.ST.Ref.ConIn->ReadKeyStroke(EFI.ST.Ref.ConIn, &key);
 		//		lastKey = (char)key.UnicodeChar;
 		//		return errorCode == 0;
 		//	}
@@ -48,11 +48,10 @@ namespace System {
 		public static unsafe ConsoleKeyInfo ReadKey(bool intercept = false) {
 			// TODO: Change this to use Native instead of platform-specific code
 			if (lastKey == '\0') {
-				EFI.ST->ConIn->Reset(EFI.ST->ConIn, false);
+				EFI.EFI.ST.Ref.ConIn.Ref.Reset(false);
 
-				EFI_INPUT_KEY key;
-				var ec = EFI.ST->BootServices->WaitForSingleEvent(EFI.ST->ConIn->WaitForKey);
-				ec = EFI.ST->ConIn->ReadKeyStroke(EFI.ST->ConIn, &key);
+				var ec = EFI.EFI.ST.Ref.BootServices.Ref.WaitForSingleEvent(EFI.EFI.ST.Ref.ConIn.Ref.WaitForKey);
+				ec = EFI.EFI.ST.Ref.ConIn.Ref.ReadKeyStroke(out var key);
 				lastKey = (char)key.UnicodeChar;
 				lastScanCode = key.ScanCode;
 			}
@@ -97,13 +96,13 @@ namespace System {
 		//public unsafe static void SetCursorPosition(int x, int y) {
 		//	s_cursorX = (ushort)x;
 		//	s_cursorY = (ushort)y;
-		//	EFI.ST->ConOut->SetCursorPosition(
-		//		EFI.ST->ConOut,
+		//	EFI.ST.Ref.ConOut->SetCursorPosition(
+		//		EFI.ST.Ref.ConOut,
 		//		(uint)x,
 		//		(uint)y);
 		//}
 
-		unsafe static void WriteChar(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* ConOut, char data) {
+		unsafe static void WriteChar(ref EFI.SimpleTextOutputProtocol ConOut, char data) {
 			// Translate some unicode characters into the IBM hardware codepage
 			data = data switch
 			{
@@ -119,11 +118,11 @@ namespace System {
 			char* x = stackalloc char[2];
 			x[0] = data;
 			x[1] = '\0';
-			ConOut->OutputString(ConOut, x);
+			ConOut.OutputString(x);
 		}
 
 		public static unsafe void Write(char c) {
-			WriteChar(EFI.ST->ConOut, c);
+			WriteChar(ref EFI.EFI.ST.Ref.ConOut.Ref, c);
 		}
 
 		public static unsafe void Write(ushort val) {
@@ -142,7 +141,7 @@ namespace System {
 
 			i++;
 
-			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x + i);
+			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x + i);
 		}
 
 		public static unsafe void Write(string s) {
@@ -174,7 +173,7 @@ namespace System {
 			x[0] = '\r';
 			x[1] = '\n';
 			x[2] = '\0';
-			EFI.ST->ConOut->OutputString(EFI.ST->ConOut, x);
+			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x);
 
 			return new string(buf, 0, i);
 		}

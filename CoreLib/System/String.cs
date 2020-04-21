@@ -22,8 +22,24 @@ namespace System {
 
 #pragma warning disable 824
 		public extern unsafe String(char* ptr);
+		public extern String(IntPtr ptr);
+		public extern String(char[] buf);
 		public extern unsafe String(char* ptr, int index, int length);
 #pragma warning restore 824
+
+		public unsafe static string FromASCII(IntPtr ptr, int length) {
+			var buf = new char[9];
+			buf[8] = '\0';
+			var _ptr = (byte*)ptr;
+
+			for (int i = 0; i < length; i++)
+				buf[i] = (char)_ptr[i];
+
+			var s = new string(buf);
+			buf.Dispose();
+
+			return s;
+		}
 
 		static unsafe string Ctor(char* ptr) {
 			var i = 0;
@@ -31,6 +47,14 @@ namespace System {
 			while (ptr[i++] != '\0') { }
 
 			return Ctor(ptr, 0, i - 1);
+		}
+
+		static unsafe string Ctor(IntPtr ptr)
+			=> Ctor((char*)ptr);
+
+		static unsafe string Ctor(char[] buf) {
+			fixed (char* _buf = buf)
+				return Ctor(_buf, 0, buf.Length);
 		}
 
 		static unsafe string Ctor(char* ptr, int index, int length) {

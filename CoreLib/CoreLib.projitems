@@ -11,9 +11,11 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\StartupCodeHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerHelpers\ThrowHelpers.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerServices.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerServices\Unsafe.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Internal\Runtime\EEType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Internal\TypeSystem\ExceptionStringID.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NativeTypeWrappers\NativeArray.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NativeTypeWrappers\NativeReference.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Platform.Kernel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Platform.EFI.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Platform.Windows.cs" />
@@ -31,6 +33,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\EETypePtr.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\FlagsAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IntPtr.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NativeTypeWrappers\NativeString.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Object.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\ParamArrayAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\ClassConstructorRunner.cs" />
@@ -49,5 +52,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\RuntimeExportAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\String.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\_Types.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Internal\Runtime\CompilerServices\" />
   </ItemGroup>
 </Project>

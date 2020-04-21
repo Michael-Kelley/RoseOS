@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
-public class FrameBuffer {
+[StructLayout(LayoutKind.Sequential)]
+public struct FrameBuffer {
 	public enum PixelFormat {
 		Unknown,
 		R8G8B8,
@@ -32,10 +34,15 @@ public class FrameBuffer {
 		set { ((uint*)_ptr)[y * Width + x] = value; }
 	}
 
-	public void Clear() {
-		// TODO: Make this faster using ulong (fill length / 2, check if length % 2 == 1, if so set last uint)
-		for (var i = 0u; i < _len / 4; i++)
-			this[i] = 0;
+	public unsafe void Clear() {
+		var count = _len / 2;
+		var rem = _len % 2;
+
+		for (var i = 0u; i < count; i++)
+			((ulong*)_ptr)[i] = 0;
+
+		if (rem == 1)
+			((uint*)_ptr)[_len - 1] = 0;
 	}
 
 	public void Fill(uint value) {

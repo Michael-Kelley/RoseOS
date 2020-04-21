@@ -31,5 +31,8 @@ namespace System {
 		}
 
 		public static explicit operator long(IntPtr value) => (long)value._value;
+
+		public static IntPtr operator +(IntPtr a, uint b)
+			=> new IntPtr((byte*)a._value + b);
 	}
 }

@@ -66,6 +66,11 @@ namespace Internal.Runtime.CompilerHelpers {
 			*address = obj;
 		}
 
+		[RuntimeExport("RhpCheckedAssignRef")]
+		static unsafe void RhpCheckedAssignRef(void** address, void* obj) {
+			*address = obj;
+		}
+
 		[RuntimeExport("RhpStelemRef")]
 		static unsafe void RhpAssignRef(Array array, int index, object obj) {
 			fixed (int* n = &array._numComponents) {
@@ -74,6 +79,27 @@ namespace Internal.Runtime.CompilerHelpers {
 				ptr += index * array.m_pEEType->ComponentSize;  // Component size should always be 8, seeing as it's a pointer...
 				var pp = (IntPtr*)ptr;
 				*pp = Unsafe.As<object, IntPtr>(ref obj);
+			}
+		}
+
+		[RuntimeExport("RhTypeCast_IsInstanceOfClass")]
+		static unsafe object RhTypeCast_IsInstanceOfClass(EEType* pTargetType, object obj) {
+			if (obj == null)
+				return null;
+
+			if (pTargetType == obj.m_pEEType)
+				return obj;
+
+			var bt = obj.m_pEEType->RawBaseType;
+
+			while (true) {
+				if (bt == null)
+					return null;
+
+				if (pTargetType == bt)
+					return obj;
+
+				bt = bt->RawBaseType;
 			}
 		}
 
