@@ -5,8 +5,7 @@ using Internal.Runtime.CompilerServices;
 
 public class EntryPoint {
 	[NativeCallable(EntryPoint = "kernel_main")]
-	public static unsafe void KernelMain(IntPtr pFb) {
-		var fb = Unsafe.As<IntPtr, FrameBuffer>(ref pFb);
+	public static void KernelMain(FrameBuffer fb) {
 		fb.Fill(fb.MakePixel(50, 150, 255));
 	}
 }

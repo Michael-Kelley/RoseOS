@@ -321,62 +321,64 @@ namespace EFI {
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public unsafe readonly struct SimpleTextOutputProtocol {
-		private readonly IntPtr _Reset;
-		private readonly IntPtr _OutputString;
-		private readonly IntPtr _TestString;
-		private readonly IntPtr _QueryMode;
-		private readonly IntPtr _SetMode;
-		private readonly IntPtr _SetAttribute;
-		private readonly IntPtr _ClearScreen;
-		private readonly IntPtr _SetCursorPosition;
-		private readonly IntPtr _EnableCursor;
+	public readonly struct SimpleTextOutputProtocol {
+		readonly IntPtr _Reset;
+		readonly IntPtr _OutputString;
+		readonly IntPtr _TestString;
+		readonly IntPtr _QueryMode;
+		readonly IntPtr _SetMode;
+		readonly IntPtr _SetAttribute;
+		readonly IntPtr _ClearScreen;
+		readonly IntPtr _SetCursorPosition;
+		readonly IntPtr _EnableCursor;
 
-		public readonly SimpleTextOutputMode* Mode;
+		public readonly ReadonlyNativeReference<SimpleTextOutputMode> Mode;
 
-		public void Reset(bool ExtendedVerification) {
+
+		public unsafe Status Reset(bool ExtendedVerification) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_Reset, _this, &ExtendedVerification);
+				return (Status)RawCalliHelper.StdCall(_Reset, _this, &ExtendedVerification);
 		}
 
-		public ulong OutputString(char* str) {
+		public unsafe Status OutputString(ReadonlyNativeString str) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				return RawCalliHelper.StdCall(_OutputString, _this, str);
+				return (Status)RawCalliHelper.StdCall(_OutputString, _this, str);
 		}
 
-		public ulong TestString(char* str) {
+		public unsafe Status TestString(ReadonlyNativeString str) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				return RawCalliHelper.StdCall(_TestString, _this, str);
+				return (Status)RawCalliHelper.StdCall(_TestString, _this, str);
 		}
 
-		public void QueryMode(uint ModeNumber, uint* Columns, uint* Rows) {
+		public unsafe Status QueryMode(ulong mode, out ulong columns, out ulong rows) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_QueryMode, _this, &ModeNumber, Columns, Rows);
+			fixed (ulong* _columns = &columns, _rows = &rows)
+				return (Status)RawCalliHelper.StdCall(_QueryMode, _this, mode, _columns, _rows);
 		}
 
-		public void SetMode(uint ModeNumber) {
+		public unsafe Status SetMode(ulong mode) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_SetMode, _this, &ModeNumber);
+				return (Status)RawCalliHelper.StdCall(_SetMode, _this, mode);
 		}
 
-		public void SetAttribute(uint Attribute) {
+		public unsafe Status SetAttribute(ulong attribute) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_SetAttribute, _this, Attribute);
+				return (Status)RawCalliHelper.StdCall(_SetAttribute, _this, attribute);
 		}
 
-		public void ClearScreen() {
+		public unsafe Status ClearScreen() {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_ClearScreen, _this);
+				return (Status)RawCalliHelper.StdCall(_ClearScreen, _this);
 		}
 
-		public void SetCursorPosition(uint Column, uint Row) {
+		public unsafe Status SetCursorPosition(ulong column, ulong row) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_SetCursorPosition, _this, Column, Row);
+				return (Status)RawCalliHelper.StdCall(_SetCursorPosition, _this, column, row);
 		}
 
-		public void EnableCursor(bool Visible) {
+		public unsafe Status EnableCursor(bool visible) {
 			fixed (SimpleTextOutputProtocol* _this = &this)
-				RawCalliHelper.StdCall(_EnableCursor, _this, Visible);
+				return (Status)RawCalliHelper.StdCall(_EnableCursor, _this, visible);
 		}
 	}
 
@@ -482,13 +484,19 @@ namespace EFI {
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public unsafe readonly struct LoadedImageProtocol {
+	public readonly struct DevicePathProtocol {
+		public readonly byte Type;
+		public readonly byte SubType;
+		public readonly ushort Length;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public readonly struct LoadedImageProtocol {
 		public readonly uint Revision;
 		public readonly Handle ParentHandle;
-		public readonly SystemTable* SystemTable;
+		public readonly ReadonlyNativeReference<SystemTable> SystemTable;
 		public readonly Handle DeviceHandle;
-		//public readonly EFI_DEVICE_PATH_PROTOCOL* FilePath;
-		public readonly IntPtr FilePath;
+		public readonly ReadonlyNativeReference<DevicePathProtocol> FilePath;
 		public readonly IntPtr Reserved;
 		public readonly uint LoadOptionsSize;
 		public readonly IntPtr LoadOptions;
@@ -554,7 +562,7 @@ namespace EFI {
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public readonly unsafe struct GraphicsOutputProtocolMode {
+	public readonly struct GraphicsOutputProtocolMode {
 		public readonly uint MaxMode;
 		public readonly uint Mode;
 		public readonly ReadonlyNativeReference<GraphicsOutputModeInformation> Info;
@@ -571,6 +579,7 @@ namespace EFI {
 
 		public readonly ReadonlyNativeReference<GraphicsOutputProtocolMode> Mode;
 
+
 		public unsafe Status QueryMode(uint modeNumber, out ulong sizeOfInfo, out ReadonlyNativeReference<GraphicsOutputModeInformation> info) {
 			fixed (GraphicsOutputProtocol* _this = &this)
 			fixed (ulong* _sizeOfInfo = &sizeOfInfo)
@@ -585,20 +594,24 @@ namespace EFI {
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	public readonly unsafe struct ComponentName2Protocol {
+	public readonly struct ComponentName2Protocol {
 		readonly IntPtr _GetDriverName;
 		readonly IntPtr _GetControllerName;
 
-		public readonly byte* SupportedLanguages;
+		public readonly NativeArray<byte> SupportedLanguages;
 
-		public Status GetDriverName(ComponentName2Protocol* ptr, byte* language, out char* name) {
-			fixed (char** pName = &name)
-				return (Status)RawCalliHelper.StdCall(_GetDriverName, ptr, language, (IntPtr*)pName);
+
+		// Change these 2 functions to use byte[] insteadd of NativeArray<byte>, and maybe string instead of ReadonlyNativeString
+		public unsafe Status GetDriverName(NativeArray<byte> language, out ReadonlyNativeString name) {
+			fixed (ComponentName2Protocol* _this = &this)
+			fixed (ReadonlyNativeString* _name = &name)
+				return (Status)RawCalliHelper.StdCall(_GetDriverName, _this, language, _name);
 		}
 
-		public Status GetControllerName(ComponentName2Protocol* ptr, Handle controller, Handle child, byte* language, out char* name) {
-			fixed (char** pName = &name)
-				return (Status)RawCalliHelper.StdCall(_GetControllerName, ptr, controller, child, language, (IntPtr*)pName);
+		public unsafe Status GetControllerName(Handle controller, Handle child, NativeArray<byte> language, out ReadonlyNativeString name) {
+			fixed (ComponentName2Protocol* _this = &this)
+			fixed (ReadonlyNativeString* _name = &name)
+				return (Status)RawCalliHelper.StdCall(_GetControllerName, _this, controller, child, language, _name);
 		}
 	}
 

@@ -78,13 +78,13 @@ public static class EntryPoint {
 		kernel.GetInfo(ref EFI.Guid.FileInfo, ref fileInfoSize, out EFI.FileInfo fileInfo);
 		PrintLine("Kernel File Size: ", (uint)fileInfo.FileSize, " bytes");
 
-		kernel.Read(out IMAGE_DOS_HEADER dosHdr);
+		kernel.Read(out PE.DOSHeader dosHdr);
 
 		if (dosHdr.e_magic != 0x5A4D) // IMAGE_DOS_SIGNATURE ("MZ")
 			return Error("'kernel.bin' is not a valid PE image!");
 
 		kernel.SetPosition((ulong)dosHdr.e_lfanew);
-		kernel.Read(out IMAGE_NT_HEADERS64 ntHdr);
+		kernel.Read(out PE.NtHeaders64 ntHdr);
 
 		if (ntHdr.Signature != 0x4550) // IMAGE_NT_SIGNATURE ("PE\0\0")
 			return Error("'kernel.bin' is not a valid NT image!");
@@ -94,7 +94,7 @@ public static class EntryPoint {
 
 		ulong sectionCount = ntHdr.FileHeader.NumberOfSections;
 		ulong virtSize = 0;
-		kernel.Read(out IMAGE_SECTION_HEADER[] sectionHdrs, (int)sectionCount);
+		kernel.Read(out PE.SectionHeader[] sectionHdrs, (int)sectionCount);
 
 		for (var i = 0U; i < sectionCount; i++) {
 			ref var sec = ref sectionHdrs[i];
@@ -232,7 +232,7 @@ public static class EntryPoint {
 		}
 
 		var epLoc = mem + ntHdr.OptionalHeader.AddressOfEntryPoint;
-		RawCalliHelper.StdCall(epLoc, Unsafe.As<FrameBuffer, IntPtr>(ref fb));
+		RawCalliHelper.StdCall(epLoc, fb);
 
 		// We should never get here!
 		// QEMU shutdown

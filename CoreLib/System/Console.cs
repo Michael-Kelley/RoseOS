@@ -1,5 +1,7 @@
 ﻿#if !PLATFORM_KERNEL
 
+using NativeTypeWrappers;
+
 namespace System {
 	public static class Console {
 		static ushort s_consoleAttribute;
