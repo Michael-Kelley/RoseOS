@@ -257,8 +257,15 @@ namespace EFI {
 		public Status Stall(ulong Microseconds)
 			=> (Status)RawCalliHelper.StdCall(_Stall, Microseconds);
 
+#if DEBUG
+		public static int AllocateCount = 0;
+#endif
+
 		// TODO: Figure out how to get rid of this pointer
 		public unsafe Status AllocatePool(MemoryType type, ulong size, IntPtr* buf) {
+#if DEBUG
+			AllocateCount++;
+#endif
 			return (Status)RawCalliHelper.StdCall(_AllocatePool, type, size, buf);
 		}
 
@@ -267,11 +274,19 @@ namespace EFI {
 				return (Status)RawCalliHelper.StdCall(_AllocatePages, type, memType, pages, _addr);
 		}
 
-		public Status FreePool(IntPtr buf)
-			=> (Status)RawCalliHelper.StdCall(_FreePool, buf);
+		public Status FreePool(IntPtr buf) {
+#if DEBUG
+			AllocateCount--;
+#endif
+			return (Status)RawCalliHelper.StdCall(_FreePool, buf);
+		}
 
-		public Status FreePool<T>(T[] arr)
-			=> (Status)RawCalliHelper.StdCall(_FreePool, Unsafe.As<T[], IntPtr>(ref arr));
+		public Status FreePool<T>(T[] arr) {
+#if DEBUG
+			AllocateCount--;
+#endif
+			return (Status)RawCalliHelper.StdCall(_FreePool, Unsafe.As<T[], IntPtr>(ref arr));
+		}
 
 		public void CopyMem(IntPtr dst, IntPtr src, ulong length)
 			=> RawCalliHelper.StdCall(_CopyMem, dst, src, length);
@@ -288,13 +303,12 @@ namespace EFI {
 				return (Status)RawCalliHelper.StdCall(_OpenProtocol, handle, _protocol, _iface, agent, controller, attr);
 		}
 
-		public unsafe Status GetMemoryMap(ref ulong memMapSize, MemoryDescriptor[] memMap, out ulong mapKey, out ulong descSize, out uint descVer) {
+		public unsafe Status GetMemoryMap(ref ulong memMapSize, IntPtr memMap, out ulong mapKey, out ulong descSize, out uint descVer) {
 			fixed (ulong* _memMapSize = &memMapSize)
-			fixed (MemoryDescriptor* _memMap = memMap)
 			fixed (ulong* _mapKey = &mapKey)
 			fixed (ulong* _descSize = &descSize)
 			fixed (uint* _descVer = &descVer)
-				return (Status)RawCalliHelper.StdCall(_GetMemoryMap, _memMapSize, _memMap, _mapKey, _descSize, _descVer);
+				return (Status)RawCalliHelper.StdCall(_GetMemoryMap, _memMapSize, memMap, _mapKey, _descSize, _descVer);
 		}
 
 		public Status ExitBootServices(Handle imageHandle, ulong mapKey)

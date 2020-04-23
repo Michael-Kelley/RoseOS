@@ -28,7 +28,7 @@ public static class EntryPoint {
 		PrintLine("Loader Version:         ", LOADER_VERSION >> 16, ".", (LOADER_VERSION & 0xFF00) >> 8, ".", LOADER_VERSION & 0xFF);
 		var vendor = st.FirmwareVendor.ToString();
 		PrintLine("UEFI Firmware Vendor:   ", vendor);
-		vendor.Dispose();
+		vendor.Dispose(); vendor = null;
 		var rev = st.FirmwareRevision;
 		PrintLine("UEFI Firmware Revision: ", rev >> 16, ".", (rev & 0xFF00) >> 8, ".", rev & 0xFF);
 		var ver = st.Hdr.Revision;
@@ -38,7 +38,6 @@ public static class EntryPoint {
 		else
 			PrintLine("UEFI Version:           ", ver >> 16, ".", (ver & 0xFFFF) / 10, ".", (ver & 0xFFFF) % 10);
 
-		vendor.Dispose();
 		Console.WriteLine();
 		EFI.Status res;
 
@@ -163,9 +162,9 @@ public static class EntryPoint {
 			gop.QueryMode(j, out var size, out var rInfo);
 			ref var info = ref rInfo.Ref;
 
-			Console.Write(info.HorizontalResolution.ToString());
+			Console.Write((ushort)info.HorizontalResolution);
 			Console.Write('x');
-			Console.Write(info.VerticalResolution.ToString());
+			Console.Write((ushort)info.VerticalResolution);
 
 			if (j != gopMode.MaxMode - 1)
 				Console.Write(", ");
@@ -177,27 +176,19 @@ public static class EntryPoint {
 
 		for (; ; ) {
 			Console.Write("Select a mode to use: ");
-			gpuMode = (uint)int.Parse(Console.ReadLine());
+			var s = Console.ReadLine();
+			gpuMode = (uint)int.Parse(s);
+			s.Dispose();
 
 			if (gpuMode < gopMode.MaxMode)
 				break;
 		}
 
-		ulong memMapSize = 0;
-		var memMap = new EFI.MemoryDescriptor[0];
-		res = bs.GetMemoryMap(ref memMapSize, memMap, out var memMapKey, out var memMapDescSize, out var memMapDescVar);
-
-		if (res == EFI.Status.BufferTooSmall) {
-			memMapSize += memMapDescSize;
-			memMap = new EFI.MemoryDescriptor[memMapSize / (ulong)Unsafe.SizeOf<EFI.MemoryDescriptor>()];
-
-			res = bs.GetMemoryMap(ref memMapSize, memMap, out memMapKey, out memMapDescSize, out memMapDescVar);
-		}
-		else
-			return Error("WTF?");
-
 		gop.SetMode(gpuMode);
+		Console.Clear();
 		gopMode = ref gop.Mode.Ref;
+		var mmap = new MemoryMap();
+		mmap.Retrieve();
 
 		var fb = new FrameBuffer(
 			(IntPtr)gopMode.FrameBufferBase, gopMode.FrameBufferSize,
@@ -205,30 +196,28 @@ public static class EntryPoint {
 			gopMode.Info.Ref.PixelFormat == EFI.GraphicsPixelFormat.BlueGreenRedReserved8BitPerColor ? FrameBuffer.PixelFormat.B8G8R8 : FrameBuffer.PixelFormat.R8G8B8
 		);
 
-		res = bs.ExitBootServices(imageHandle, memMapKey);
+#if DEBUG
+		Console.Write("Unfreed allocations: ");
+		Console.Write((ushort)EFI.BootServices.AllocateCount);
+		Console.WriteLine();
+		Console.ReadKey();
+#endif
+
+		res = bs.ExitBootServices(imageHandle, mmap.Key);
 
 		// No Console.Write* after this point!
 
 		if (res != EFI.Status.Success) {
-			bs.FreePool(memMap);
+			mmap.Free();
+			mmap.Retrieve();
 
-			memMapSize = 0;
-			res = bs.GetMemoryMap(ref memMapSize, memMap, out memMapKey, out memMapDescSize, out memMapDescVar);
+			res = bs.ExitBootServices(imageHandle, mmap.Key);
 
-			if (res == EFI.Status.BufferTooSmall) {
-				memMapSize += memMapDescSize;
-				memMap = new EFI.MemoryDescriptor[memMapSize / (ulong)Unsafe.SizeOf<EFI.MemoryDescriptor>()];
+			if (res != EFI.Status.Success) {
+				mmap.Free();
 
-				res = bs.GetMemoryMap(ref memMapSize, memMap, out memMapKey, out memMapDescSize, out memMapDescVar);
+				return (int)res;
 			}
-
-			res = bs.ExitBootServices(imageHandle, memMapKey);
-		}
-
-		if (res != EFI.Status.Success) {
-			bs.FreePool(memMap);
-
-			return (int)res;
 		}
 
 		var epLoc = mem + ntHdr.OptionalHeader.AddressOfEntryPoint;
@@ -263,9 +252,11 @@ public static class EntryPoint {
 				var s = args[i].ToString();
 				Console.Write(s);
 				s.Dispose();
+				args[i].Dispose();
 			}
 		}
 
+		args.Dispose();
 		Console.WriteLine();
 	}
 }

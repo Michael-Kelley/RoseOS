@@ -52,8 +52,8 @@ namespace System {
 			if (lastKey == '\0') {
 				EFI.EFI.ST.Ref.ConIn.Ref.Reset(false);
 
-				var ec = EFI.EFI.ST.Ref.BootServices.Ref.WaitForSingleEvent(EFI.EFI.ST.Ref.ConIn.Ref.WaitForKey);
-				ec = EFI.EFI.ST.Ref.ConIn.Ref.ReadKeyStroke(out var key);
+				EFI.EFI.ST.Ref.BootServices.Ref.WaitForSingleEvent(EFI.EFI.ST.Ref.ConIn.Ref.WaitForKey);
+				EFI.EFI.ST.Ref.ConIn.Ref.ReadKeyStroke(out var key);
 				lastKey = (char)key.UnicodeChar;
 				lastScanCode = key.ScanCode;
 			}
