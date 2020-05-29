@@ -1,0 +1,1 @@
+A static C library that contains low level that might not be suitable for or possible with C#. Currently contains serial out functions and Durand's liballoc.

@@ -1,0 +1,1 @@
+RoseOS's lower-half monolithic kernel. Currently only initialises the allocator and prints text to the screen.
