@@ -6,7 +6,7 @@ using Internal.Runtime.CompilerServices;
 using NativeTypeWrappers;
 
 public static class EntryPoint {
-	const uint LOADER_VERSION = 0x00000001;
+	const uint LOADER_VERSION = 0x00010000;	// 1.0.0
 
 	[RuntimeExport("EfiMain")]
 	static long EfiMain(EFI.Handle imageHandle, ReadonlyNativeReference<EFI.SystemTable> systemTable) {
@@ -104,9 +104,11 @@ public static class EntryPoint {
 		}
 
 		ulong hdrSize = ntHdr.OptionalHeader.SizeOfHeaders;
-		ulong pages = ((hdrSize) >> 12) + (((hdrSize) & 0xFFF) > 0 ? 1U : 0U);
+		ulong pages = ((virtSize) >> 12) + (((virtSize) & 0xFFF) > 0 ? 1U : 0U);
+		PrintLine("Virtual Size: ", virtSize, ", Pages: ", pages);
 		var mem = (IntPtr)ntHdr.OptionalHeader.ImageBase;
 		res = bs.AllocatePages(EFI.AllocateType.Address, EFI.MemoryType.LoaderData, pages, ref mem);
+		PrintLine("mem: ", (ulong)mem);
 
 		if (res != EFI.Status.Success)
 			return Error("Failed to allocate memory for kernel!", res);
@@ -114,6 +116,8 @@ public static class EntryPoint {
 		Platform.ZeroMemory(mem, pages << 12);
 		kernel.SetPosition(0U);
 		kernel.Read(ref hdrSize, mem);
+
+		var modulesSeg = IntPtr.Zero;
 
 		for (var i = 0U; i < sectionCount; i++) {
 			ref var sec = ref sectionHdrs[i];
@@ -126,6 +130,10 @@ public static class EntryPoint {
 			}
 
 			PrintLine("Reading section (", name, ")");
+
+			if (name[1] == 'm' && name[2] == 'o')
+				modulesSeg = mem + sec.VirtualAddress;
+
 			name.Dispose();
 
 			var addr = mem + sec.VirtualAddress;
@@ -199,7 +207,7 @@ public static class EntryPoint {
 #if DEBUG
 		Console.Write("Unfreed allocations: ");
 		Console.Write((ushort)EFI.BootServices.AllocateCount);
-		Console.WriteLine();
+		Console.WriteLine("\r\nPress any key to continue to kernel...");
 		Console.ReadKey();
 #endif
 
@@ -221,7 +229,7 @@ public static class EntryPoint {
 		}
 
 		var epLoc = mem + ntHdr.OptionalHeader.AddressOfEntryPoint;
-		RawCalliHelper.StdCall(epLoc, fb);
+		RawCalliHelper.StdCall(epLoc, modulesSeg, fb, mmap);
 
 		// We should never get here!
 		// QEMU shutdown

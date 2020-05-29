@@ -11,7 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\library.c" />
+    <ClCompile Include="src\liballoc.c" />
+    <ClCompile Include="src\io.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\liballoc.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -69,6 +73,8 @@
       <EnableFiberSafeOptimizations />
       <OmitDefaultLibName>true</OmitDefaultLibName>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <AdditionalIncludeDirectories>./include</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

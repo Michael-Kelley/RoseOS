@@ -72,7 +72,7 @@ namespace PE {
         public uint Size;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct OptionalHeaders64 {
         public ushort Magic;
         public byte MajorLinkerVersion;
@@ -121,7 +121,7 @@ namespace PE {
         public DataDirectory Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     struct NtHeaders64 {
         public uint Signature;
         public FileHeader FileHeader;

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Runtime;
+using System.Runtime.InteropServices;
 
 using Internal.Runtime.CompilerServices;
 
 namespace Internal.Runtime.CompilerHelpers {
+	//[McgIntrinsics]
 	class StartupCodeHelpers {
 		[RuntimeExport("RhpReversePInvoke2")]
 		static void RhpReversePInvoke2(IntPtr frame) { }
@@ -66,13 +68,18 @@ namespace Internal.Runtime.CompilerHelpers {
 			*address = obj;
 		}
 
+		[RuntimeExport("RhpByRefAssignRef")]
+		static unsafe void RhpByRefAssignRef(void** address, void* obj) {
+			*address = obj;
+		}
+
 		[RuntimeExport("RhpCheckedAssignRef")]
 		static unsafe void RhpCheckedAssignRef(void** address, void* obj) {
 			*address = obj;
 		}
 
 		[RuntimeExport("RhpStelemRef")]
-		static unsafe void RhpAssignRef(Array array, int index, object obj) {
+		static unsafe void RhpStelemRef(Array array, int index, object obj) {
 			fixed (int* n = &array._numComponents) {
 				var ptr = (byte*)n;
 				ptr += 8;   // Array length is padded to 8 bytes on 64-bit
@@ -105,6 +112,68 @@ namespace Internal.Runtime.CompilerHelpers {
 
 		internal static unsafe void SetEEType(IntPtr obj, EEType* type) {
 			Platform.CopyMemory(obj, (IntPtr)(&type), (ulong)sizeof(IntPtr));
+		}
+
+		public static unsafe void InitialiseRuntime(IntPtr modulesSeg) {
+			var modules = (IntPtr*)modulesSeg;
+
+			for (int i = 0; ; i++) {
+				var addr = modules[i];
+
+				if (addr.Equals(IntPtr.Zero))
+					break;
+
+				InitialiseModule(addr, i);
+			}
+		}
+
+		static unsafe void InitialiseModule(IntPtr addr, int index) {
+			var header = (ReadyToRunHeader*)addr;
+			var sections = (ModuleInfoRow*)(header + 1);
+
+			for (int i = 0; i < header->NumberOfSections; i++) {
+				if (sections[i].SectionId != 201)	// We only care about GCStaticRegion right now
+					continue;
+
+				InitialiseStatics(sections[i].Start, sections[i].End);
+				break;
+			}
+		}
+
+		static unsafe void InitialiseStatics(IntPtr rgnStart, IntPtr rgnEnd) {
+			for (var block = (IntPtr*)rgnStart; block < (IntPtr*)rgnEnd; block++) {
+				var pBlock = (IntPtr*)*block;
+				var blockAddr = (long)(*pBlock);
+
+				if ((blockAddr & 1) == 1) { // GCStaticRegionConstants.Uninitialized
+					var obj = RhpNewFast((EEType*)new IntPtr(blockAddr & ~(1 | 2)));
+					var handle = Platform.Allocate((ulong)sizeof(IntPtr));
+					*(IntPtr*)handle = Unsafe.As<object, IntPtr>(ref obj);
+					*pBlock = handle;
+				}
+			}
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		struct ReadyToRunHeader {
+			public uint Signature;  // "RTR"
+			public ushort MajorVersion;
+			public ushort MinorVersion;
+			public uint Flags;
+			public ushort NumberOfSections;
+			public byte EntrySize;
+			public byte EntryType;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		struct ModuleInfoRow {
+			public int SectionId;
+			public int Flags;
+			public IntPtr Start;
+			public IntPtr End;
+
+			public bool HasEndPointer => !End.Equals(IntPtr.Zero);
+			public int Length => (int)((ulong)End - (ulong)Start);
 		}
 	}
 }

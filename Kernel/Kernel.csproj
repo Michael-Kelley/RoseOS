@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <LinkerArg Include="/entry:kernel_main /fixed /base:0x00100000" />
+    <LinkerArg Include="/entry:kernel_main /fixed /safeseh:no /base:0x100000 /filealign:0x1000" />
   </ItemGroup>
 
   <ItemGroup>

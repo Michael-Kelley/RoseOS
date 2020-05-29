@@ -1,6 +1,4 @@
-﻿#if PLATFORM_WIN
-
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 internal static class Platform {
@@ -130,5 +128,3 @@ internal static class Platform {
 		}
 	}
 }
-
-#endif

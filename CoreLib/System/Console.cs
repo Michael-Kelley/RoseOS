@@ -1,6 +1,4 @@
-﻿#if !PLATFORM_KERNEL
-
-using NativeTypeWrappers;
+﻿using NativeTypeWrappers;
 
 namespace System {
 	public static class Console {
@@ -48,6 +46,7 @@ namespace System {
 		}
 
 		public static unsafe ConsoleKeyInfo ReadKey(bool intercept = false) {
+#if PLATFORM_EFI
 			// TODO: Change this to use Native instead of platform-specific code
 			if (lastKey == '\0') {
 				EFI.EFI.ST.Ref.ConIn.Ref.Reset(false);
@@ -89,10 +88,12 @@ namespace System {
 				Write(c);
 
 			return new ConsoleKeyInfo(c, k, false, false, false);
-
-			//var c = Native.ReadKey();
+#else
+			//var c = Platform.ReadKey();
 
 			//return new ConsoleKeyInfo(c, default, false, false, false);
+			return default;
+#endif
 		}
 
 		//public unsafe static void SetCursorPosition(int x, int y) {
@@ -104,6 +105,7 @@ namespace System {
 		//		(uint)y);
 		//}
 
+#if PLATFORM_EFI
 		unsafe static void WriteChar(ref EFI.SimpleTextOutputProtocol ConOut, char data) {
 			// Translate some unicode characters into the IBM hardware codepage
 			data = data switch
@@ -126,8 +128,10 @@ namespace System {
 		public static unsafe void Write(char c) {
 			WriteChar(ref EFI.EFI.ST.Ref.ConOut.Ref, c);
 		}
+#endif
 
 		public static unsafe void Write(ushort val) {
+#if PLATFORM_EFI
 			char* x = stackalloc char[6];
 			var i = 4;
 
@@ -144,6 +148,8 @@ namespace System {
 			i++;
 
 			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x + i);
+#else
+#endif
 		}
 
 		public static unsafe void Write(string s) {
@@ -155,6 +161,7 @@ namespace System {
 		}
 
 		public static unsafe string ReadLine() {
+#if PLATFORM_EFI
 			var buf = stackalloc char[256];
 			var i = 0;
 
@@ -178,8 +185,9 @@ namespace System {
 			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x);
 
 			return new string(buf, 0, i);
+#else
+			return "";
+#endif
 		}
 	}
 }
-
-#endif

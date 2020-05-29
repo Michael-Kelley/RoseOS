@@ -2,5 +2,5 @@
 
 public static class Native {
 	[DllImport("*")]
-	public static extern void outw(ushort value, ushort port);
+	public static extern void outw(ushort port, ushort value);
 }

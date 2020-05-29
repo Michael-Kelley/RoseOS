@@ -16,6 +16,9 @@ public struct FrameBuffer {
 	public readonly uint Height;
 	public readonly PixelFormat Format;
 
+	internal static FrameBuffer _instance;
+	public static ref FrameBuffer I => ref _instance;
+
 	public FrameBuffer(IntPtr pointer, ulong length, uint width, uint height, PixelFormat format) {
 		_ptr = pointer;
 		_len = length;
@@ -63,5 +66,11 @@ public struct FrameBuffer {
 		}
 
 		return pixel;
+	}
+
+	public unsafe void Blt(uint[] src, uint width, uint height, uint x, uint y) {
+		fixed (uint* _src = src)
+			for (int sy = 0; sy < height; sy++)
+				Platform.CopyMemory(_ptr + 4 * (ulong)((y + sy) * Width + x), (IntPtr)(_src + (sy * width)), 4 * width);
 	}
 }

@@ -55,7 +55,7 @@
   <Target Name="CopyAndRunEFI" AfterTargets="Publish">
     <!-- <WriteLinesToFile File="$$(MSBuildStartupDirectory)\build\startup.nsh" Overwrite="true" Lines="\EFI\BOOT\BOOTX64.efi" /> -->
     <Copy SourceFiles="$(MSBuildProjectDirectory)\$(NativeOutputPath)$(TargetName)$(NativeBinaryExt)" DestinationFiles="$(MSBuildStartupDirectory)\build\EFI\BOOT\BOOTX64.efi" />
-    <Exec Command="$(MSBuildStartupDirectory)\\tools\\qemu\\qemu-system-x86_64 -L &quot;$(MSBuildStartupDirectory)\\tools\\qemu\\&quot; -bios bios64.bin -k en-gb -m 512M -drive file=fat:rw:&quot;$(MSBuildStartupDirectory)\\build\\&quot;,format=raw,media=disk -drive file=fat:rw:&quot;$(MSBuildStartupDirectory)\\os_drive\\&quot;,format=raw,media=disk" />
+    <Exec Command="$(MSBuildStartupDirectory)\\tools\\qemu\\qemu-system-x86_64 -L &quot;$(MSBuildStartupDirectory)\\tools\\qemu\\&quot; -bios bios64.bin -k en-gb -m 512M -drive file=fat:rw:&quot;$(MSBuildStartupDirectory)\\build\\&quot;,format=raw,media=disk -drive file=fat:rw:&quot;$(MSBuildStartupDirectory)\\os_drive\\&quot;,format=raw,media=disk -serial file:serial.log" />
   </Target>
 
 </Project>

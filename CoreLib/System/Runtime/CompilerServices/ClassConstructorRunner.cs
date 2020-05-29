@@ -10,6 +10,11 @@ namespace System.Runtime.CompilerServices {
 			return nonGcStaticBase;
 		}
 
+		private static unsafe object CheckStaticClassConstructionReturnGCStaticBase(ref StaticClassConstructionContext context, object gcStaticBase) {
+			CheckStaticClassConstruction(ref context);
+			return gcStaticBase;
+		}
+
 		private static unsafe void CheckStaticClassConstruction(ref StaticClassConstructionContext context) {
 			// Very simplified class constructor runner. In real world, the class constructor runner
 			// would need to be able to deal with potentially multiple threads racing to initialize
