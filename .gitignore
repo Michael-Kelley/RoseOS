@@ -7,3 +7,4 @@ lib/see_sharp_native.lib
 tmp/
 Debug/
 *.pdb
+serial.log
