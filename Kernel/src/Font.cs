@@ -4,8 +4,8 @@ static class Font {
 	public const int FONT_WIDTH = 10;
 	public const int FONT_HEIGHT = 20;
 
-	const int START_CODEPOINT = 32;
-	const int END_CODEPOINT = 126;
+	const int START_CODEPOINT = ' ';
+	const int END_CODEPOINT = '~';
 
 	static ushort[][] _data = null;
 
@@ -301,7 +301,7 @@ static class Font {
 
 	public static unsafe void GetGlyphData(char glyph, uint foreground, uint background, ref uint[] glyphData) {
 		if (glyph < START_CODEPOINT || glyph > END_CODEPOINT)
-			glyph = (char)START_CODEPOINT;
+			glyph = '?';
 
 		var idx = glyph - START_CODEPOINT;
 		var gd = _data[idx];

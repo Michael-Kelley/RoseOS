@@ -86,7 +86,7 @@ internal static unsafe class Platform {
 				continue;
 			}
 
-			if (c == '\x27') {
+			if (c == '\x1b') {
 				i += Console.HandleANSIEscapeSequence(msg, i + 1);
 				continue;
 			}
