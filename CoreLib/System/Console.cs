@@ -5,11 +5,8 @@ namespace System {
 		static ushort s_consoleAttribute;
 		static ushort s_cursorX;
 		static ushort s_cursorY;
-#pragma warning disable 169
 		static ushort s_windowSizeX;
 		static ushort s_windowSizeY;
-#pragma warning restore 169
-
 		static char lastKey = '\0';
 		static ushort lastScanCode;
 
@@ -20,13 +17,22 @@ namespace System {
 		//	}
 		//}
 
-		//public unsafe static ConsoleColor ForegroundColor {
-		//	set {
-		//		s_consoleAttribute = (ushort)value;
-		//		uint color = s_consoleAttribute;
-		//		EFI.ST.Ref.ConOut->SetAttribute(EFI.ST.Ref.ConOut, color);
-		//	}
-		//}
+		public static ConsoleColor ForegroundColor {
+			get => Platform.GetConsoleForegroundColour();
+			set => Platform.SetConsoleForegroundColour(value);
+
+			//s_consoleAttribute = (ushort)value;
+			//uint color = s_consoleAttribute;
+			//EFI.ST.Ref.ConOut->SetAttribute(EFI.ST.Ref.ConOut, color);
+		}
+
+		public static ConsoleColor BackgroundColor {
+			get => Platform.GetConsoleBackgroundColour();
+			set => Platform.SetConsoleBackgroundColour(value);
+		}
+
+		public static ConsoleColor ColorFromRGB(byte red, byte green, byte blue)
+			=> (ConsoleColor)(blue | (green << 8) | (red << 16) | (int)ConsoleColor.Custom);
 
 		//public static unsafe bool KeyAvailable {
 		//	get {
@@ -188,6 +194,65 @@ namespace System {
 #else
 			return "";
 #endif
+		}
+
+		public static int HandleANSIEscapeSequence(string text, int charPos) {
+			char c = text[charPos++];
+			int processed = 0;
+
+			switch (c) {
+				case '[': {
+						processed++;
+						c = text[charPos++];
+						int v;
+
+						for (; ; ) {
+							if (c == 'm') {
+								processed++;
+								break;
+							}
+
+							if (c == ';') {
+								processed++;
+								c = text[charPos++];
+								continue;
+							}
+
+							if (!Char.IsDigit(c))
+								return 0;
+
+							v = 0;
+
+							for (; ; ) {
+								v *= 10;
+								v += c - '0';
+								processed++;
+								c = text[charPos++];
+
+								if (!Char.IsDigit(c))
+									break;
+							}
+
+							if (v >= 30 && v <= 37)
+								Platform.SetConsoleForegroundColour((ConsoleColor)(v - 30));
+							else if (v >= 40 && v <= 47)
+								Platform.SetConsoleBackgroundColour((ConsoleColor)(v - 40));
+							else if (v >= 90 && v <= 97)
+								Platform.SetConsoleForegroundColour((ConsoleColor)(v - 82));
+							else if (v >= 100 && v <= 107)
+								Platform.SetConsoleBackgroundColour((ConsoleColor)(v - 92));
+							else if (v == 39)
+								Platform.SetConsoleForegroundColour(ConsoleColor.White);
+							else if (v == 49)
+								Platform.SetConsoleBackgroundColour(ConsoleColor.Black);
+						}
+					}
+					break;
+				default:
+					return 0;
+			}
+
+			return processed;
 		}
 	}
 }

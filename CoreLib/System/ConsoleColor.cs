@@ -16,6 +16,8 @@ namespace System {
 		Red,
 		Magenta,
 		Yellow,
-		White
+		White,
+
+		Custom = 0x01000000
 	}
 }

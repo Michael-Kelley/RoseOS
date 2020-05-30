@@ -16,6 +16,9 @@ namespace System {
 
 			return r;
 		}
+
+		public static bool IsDigit(char c)
+			=> c >= '0' && c <= '9';
 	}
 
 	public struct SByte { }

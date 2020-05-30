@@ -53,6 +53,16 @@ internal static unsafe class Platform {
 	//	return x[0];
 	//}
 
+	public static ConsoleColor GetConsoleBackgroundColour()
+	=> ConsoleColor.Black;
+
+	public static void SetConsoleBackgroundColour(ConsoleColor colour) { }
+
+	public static ConsoleColor GetConsoleForegroundColour()
+	=> ConsoleColor.White;
+
+	public static void SetConsoleForegroundColour(ConsoleColor colour) { }
+
 	public static void ClearConsole() {
 		EFI.EFI.ST.Ref.ConOut.Ref.ClearScreen();
 	}
