@@ -1,7 +1,7 @@
-﻿using System;
-
-public abstract class Debug {
+﻿
+static class Debug {
 	const ushort COM1 = 0x3f8;
+
 
 	public static void Initialise() {
 		Native.outb(COM1 + 1, 0x00);    // Disable all interrupts
@@ -16,16 +16,16 @@ public abstract class Debug {
 	public static void Print(string msg) {
 		for (int i = 0; i < msg.Length; i++) {
 			var c = msg[i];
-			while ((Native.inb(COM1 + 5) & 0x20) == 0) { }	// Wait until we can send a character
-			Native.outb(COM1, (byte)(c >> 8));
+			//while ((Native.inb(COM1 + 5) & 0x20) == 0) { }	// Wait until we can send a character
+			//Native.outb(COM1, (byte)(c >> 8));
 			while ((Native.inb(COM1 + 5) & 0x20) == 0) { }
 			Native.outb(COM1, (byte)(c & 0xFF));
 		}
 	}
 
 	public static void Print(char c) {
-		while ((Native.inb(COM1 + 5) & 0x20) == 0) { }
-		Native.outb(COM1, (byte)(c >> 8));
+		//while ((Native.inb(COM1 + 5) & 0x20) == 0) { }
+		//Native.outb(COM1, (byte)(c >> 8));
 		while ((Native.inb(COM1 + 5) & 0x20) == 0) { }
 		Native.outb(COM1, (byte)(c & 0xFF));
 	}

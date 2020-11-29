@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+
 internal static unsafe class Platform {
 	[DllImport("*")]
 	public static extern IntPtr kmalloc(ulong size);
@@ -67,14 +68,33 @@ internal static unsafe class Platform {
 	public unsafe static void Print(string msg) {
 		if (ttyGlyphData == null) {
 			ttyGlyphData = new uint[Font.FONT_WIDTH * Font.FONT_HEIGHT];
-			ttyRows = FrameBuffer.I.Width / Font.FONT_WIDTH - 2;
-			ttyCols = FrameBuffer.I.Height / Font.FONT_HEIGHT - 2;
+			ttyCols = FrameBuffer.I.Width / Font.FONT_WIDTH - 2;
+			ttyRows = FrameBuffer.I.Height / Font.FONT_HEIGHT - 2;
 			ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
 			ttyY = (FrameBuffer.I.Height % Font.FONT_HEIGHT) / 2 + Font.FONT_HEIGHT;
 		}
 
 		for (int i = 0; i < msg.Length; i++) {
 			var c = msg[i];
+
+			if (c == '\b') {
+				if (ttyX == ((FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH)
+					&& ttyY == (FrameBuffer.I.Height % Font.FONT_HEIGHT) / 2 + Font.FONT_HEIGHT)
+					continue;
+
+				ttyX -= Font.FONT_WIDTH;
+
+				if (ttyX < ((FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH)) {
+					ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
+
+					continue;
+				}
+
+				Font.GetGlyphData(' ', ttyFgValue, ttyBgValue, ref ttyGlyphData);
+				FrameBuffer.I.Blt(ttyGlyphData, Font.FONT_WIDTH, Font.FONT_HEIGHT, ttyX, ttyY);
+
+				continue;
+			}
 
 			if (c == '\r') {
 				ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
@@ -83,6 +103,12 @@ internal static unsafe class Platform {
 
 			if (c == '\n') {
 				ttyY += Font.FONT_HEIGHT;
+
+				if (ttyY > ttyRows * Font.FONT_HEIGHT) {
+					FrameBuffer.I.Move(0, -Font.FONT_HEIGHT, ttyBgValue);
+					ttyY -= Font.FONT_HEIGHT;
+				}
+
 				continue;
 			}
 
@@ -95,15 +121,83 @@ internal static unsafe class Platform {
 			FrameBuffer.I.Blt(ttyGlyphData, Font.FONT_WIDTH, Font.FONT_HEIGHT, ttyX, ttyY);
 			ttyX += Font.FONT_WIDTH;
 
-			if (ttyX >= ttyRows * Font.FONT_WIDTH) {
+			if (ttyX >= ttyCols * Font.FONT_WIDTH) {
 				ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
 				ttyY += Font.FONT_HEIGHT;
+			}
+
+			if (ttyY > ttyRows * Font.FONT_HEIGHT) {
+				FrameBuffer.I.Move(0, -Font.FONT_HEIGHT, ttyBgValue);
+				ttyY -= Font.FONT_HEIGHT;
 			}
 		}
 	}
 
+	public unsafe static void Print(char val) {
+		if (ttyGlyphData == null) {
+			ttyGlyphData = new uint[Font.FONT_WIDTH * Font.FONT_HEIGHT];
+			ttyCols = FrameBuffer.I.Width / Font.FONT_WIDTH - 2;
+			ttyRows = FrameBuffer.I.Height / Font.FONT_HEIGHT - 2;
+			ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
+			ttyY = (FrameBuffer.I.Height % Font.FONT_HEIGHT) / 2 + Font.FONT_HEIGHT;
+		}
+
+		var c = val;
+
+		if (c == '\b') {
+			if (ttyX == ((FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH)
+				&& ttyY == (FrameBuffer.I.Height % Font.FONT_HEIGHT) / 2 + Font.FONT_HEIGHT)
+				return;
+
+			ttyX -= Font.FONT_WIDTH;
+
+			if (ttyX < ((FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH)) {
+				ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
+
+				return;
+			}
+
+			Font.GetGlyphData(' ', ttyFgValue, ttyBgValue, ref ttyGlyphData);
+			FrameBuffer.I.Blt(ttyGlyphData, Font.FONT_WIDTH, Font.FONT_HEIGHT, ttyX, ttyY);
+
+			return;
+		}
+
+		if (c == '\r') {
+			ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
+			return;
+		}
+
+		if (c == '\n') {
+			ttyY += Font.FONT_HEIGHT;
+
+			if (ttyY > ttyRows * Font.FONT_HEIGHT) {
+				FrameBuffer.I.Move(0, -Font.FONT_HEIGHT, ttyBgValue);
+				ttyY -= Font.FONT_HEIGHT;
+			}
+
+			return;
+		}
+
+		Font.GetGlyphData(c, ttyFgValue, ttyBgValue, ref ttyGlyphData);
+		FrameBuffer.I.Blt(ttyGlyphData, Font.FONT_WIDTH, Font.FONT_HEIGHT, ttyX, ttyY);
+		ttyX += Font.FONT_WIDTH;
+
+		if (ttyX >= ttyCols * Font.FONT_WIDTH) {
+			ttyX = (FrameBuffer.I.Width % Font.FONT_WIDTH) / 2 + Font.FONT_WIDTH;
+			ttyY += Font.FONT_HEIGHT;
+		}
+
+		if (ttyY > ttyRows * Font.FONT_HEIGHT) {
+			FrameBuffer.I.Move(0, -Font.FONT_HEIGHT, ttyBgValue);
+			ttyY -= Font.FONT_HEIGHT;
+		}
+	}
+
 	public unsafe static void Print(char* msg, int len) {
-		Print(new string(msg, 0, len));
+		var s = new string(msg, 0, len);
+		Print(s);
+		s.Dispose();
 	}
 
 	public unsafe static void PrintLine(string msg) {
@@ -114,6 +208,10 @@ internal static unsafe class Platform {
 	public unsafe static void PrintLine(char* msg, int len) {
 		Print(msg, len);
 		Print("\r\n");
+	}
+
+	public static KeyInfo ReadKey() {
+		return Keyboard.ReadKey();
 	}
 
 	public static ConsoleColor GetConsoleBackgroundColour()

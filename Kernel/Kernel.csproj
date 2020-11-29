@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <LangVersion>8.0</LangVersion>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
     <EnableDefaultItems>false</EnableDefaultItems>
     <Platforms>x64</Platforms>
     <Configurations>Debug;Release</Configurations>

@@ -3,8 +3,12 @@
   <ItemGroup>
     <ClCompile Include="src\liballoc.c" />
     <ClCompile Include="src\io.c" />
+    <ClCompile Include="src\interrupts.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\liballoc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="src\interrupts_asm.asm" />
   </ItemGroup>
 </Project>

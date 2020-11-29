@@ -2,6 +2,9 @@
 
 namespace System {
 	public static class Console {
+		const int MAX_INPUT_LENGTH = 255;
+
+
 		static ushort s_consoleAttribute;
 		static ushort s_cursorX;
 		static ushort s_cursorY;
@@ -76,6 +79,8 @@ namespace System {
 				k = ConsoleKey.DownArrow;
 			else if (c == 'a')
 				k = ConsoleKey.LeftArrow;
+			else if (c == '\r')
+				k = ConsoleKey.Enter;
 
 			if (lastScanCode != 0) {
 				k = lastScanCode switch
@@ -95,10 +100,19 @@ namespace System {
 
 			return new ConsoleKeyInfo(c, k, false, false, false);
 #else
-			//var c = Platform.ReadKey();
+			var c = Platform.ReadKey();
 
-			//return new ConsoleKeyInfo(c, default, false, false, false);
-			return default;
+			if (!intercept) {
+				if (c.KeyChar == '\n')
+					Write("\r\n");
+				else
+					Write(c.KeyChar);
+			}
+
+			var r = new ConsoleKeyInfo(c.KeyChar, (ConsoleKey)c.Key,
+				c.Modifiers.HasFlag(KeyModifier.Shift), c.Modifiers.HasFlag(KeyModifier.Alt), c.Modifiers.HasFlag(KeyModifier.Ctrl));
+
+			return r;
 #endif
 		}
 
@@ -130,14 +144,17 @@ namespace System {
 			x[1] = '\0';
 			ConOut.OutputString(x);
 		}
-
-		public static unsafe void Write(char c) {
-			WriteChar(ref EFI.EFI.ST.Ref.ConOut.Ref, c);
-		}
 #endif
 
-		public static unsafe void Write(ushort val) {
+		public static unsafe void Write(char val) {
 #if PLATFORM_EFI
+			WriteChar(ref EFI.EFI.ST.Ref.ConOut.Ref, val);
+#else
+			Platform.Print(&val, 1);
+#endif
+		}
+
+		public static unsafe void Write(ushort val) {
 			char* x = stackalloc char[6];
 			var i = 4;
 
@@ -153,8 +170,36 @@ namespace System {
 
 			i++;
 
+#if PLATFORM_EFI
 			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x + i);
 #else
+			Platform.Print(x + i, 5 - i);
+#endif
+		}
+
+		public static unsafe void Write(ulong val) {
+			char* x = stackalloc char[21];
+			var i = 19;
+
+			x[20] = '\0';
+
+			do {
+				var d = (ushort)(val % 10);
+				val /= 10;
+
+				d += 0x30;
+				x[i--] = (char)d;
+			} while (val > 0);
+
+			i++;
+
+#if PLATFORM_EFI
+			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x + i);
+#else
+			//Platform.Print(x + i, 20 - i);
+
+			for (int j = i; j < 20; j++)
+				Platform.Print(x[j]);
 #endif
 		}
 
@@ -167,33 +212,33 @@ namespace System {
 		}
 
 		public static unsafe string ReadLine() {
-#if PLATFORM_EFI
-			var buf = stackalloc char[256];
+			var buf = stackalloc char[MAX_INPUT_LENGTH];
 			var i = 0;
 
 			// TODO: Replace ReadKey with WaitForEvent and ReadKeyStroke
-			while (true) {
-				var c = ReadKey();
+			for (; ; ) {
+				var ki = ReadKey();
+				var c = ki.KeyChar;
 
-				if (c.KeyChar == '\x0D')		// Enter
+				if (ki.Key == ConsoleKey.Enter)	// Enter
 					break;
 
-				if (c.KeyChar >= 32)            // Ignore all non-alphanumeric-or-symbol characters
-					buf[i++] = c.KeyChar;
-				else if (c.KeyChar == '\x08' && i > 0)   // Backspace
+				if (i == MAX_INPUT_LENGTH - 1)
+					continue;
+
+				if (c >= 32)            // Ignore all non-alphanumeric-or-symbol characters
+					buf[i++] = c;
+				else if (c == '\x08' && i > 0)   // Backspace
 					i--;
 			}
 
-			var x = stackalloc char[3];
-			x[0] = '\r';
-			x[1] = '\n';
-			x[2] = '\0';
-			EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x);
+			//var x = stackalloc char[3];
+			//x[0] = '\r';
+			//x[1] = '\n';
+			//x[2] = '\0';
+			//EFI.EFI.ST.Ref.ConOut.Ref.OutputString(x);
 
 			return new string(buf, 0, i);
-#else
-			return "";
-#endif
 		}
 
 		public static int HandleANSIEscapeSequence(string text, int charPos) {
@@ -245,6 +290,10 @@ namespace System {
 								Platform.SetConsoleForegroundColour(ConsoleColor.White);
 							else if (v == 49)
 								Platform.SetConsoleBackgroundColour(ConsoleColor.Black);
+							else if (v == 0) {
+								Platform.SetConsoleBackgroundColour(ConsoleColor.Black);
+								Platform.SetConsoleForegroundColour(ConsoleColor.White);
+							}
 						}
 					}
 					break;

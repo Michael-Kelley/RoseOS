@@ -1,124 +1,126 @@
 ﻿using System;
 using System.Runtime;
-using System.Runtime.InteropServices;
 
-public abstract class Allocator {
-	const int TAG_ARRAY_LENGTH = 512;
 
-	[StructLayout(LayoutKind.Sequential)]
-	struct Tag {
-		public IntPtr Address;
-		public uint Pages;
-		public bool IsFree;
+abstract class Allocator {
+	unsafe struct BitMap {
+		public fixed byte Data[BITMAP_LENGTH];
+	}
 
-		public Tag(IntPtr address, uint pages, bool free) {
-			Address = address;
-			Pages = pages;
-			IsFree = free;
+
+	const int BITMAP_LENGTH = 1024 * 16; // 16kb can hold enough bits to represent 131,072 pages, allowing up to 512mb to be allocated (assuming a page size of 4kb)
+
+
+	static BitMap bitMap;
+	static int totalPages = 0;
+	static uint allocations = 0;
+
+
+	public static unsafe bool AddFreePages(IntPtr address, uint pages) {
+		var startPage = (int)((ulong)address / 4096);
+
+		for (int i = 0; i < pages; i++) {
+			if (totalPages < startPage + i)
+				totalPages = startPage + i;
+
+			var index = (startPage + i) / 8;
+			var bit = (startPage + i) % 8;
+
+			bitMap.Data[index] |= (byte)(1 << bit);
 		}
-	}
-
-	unsafe struct DataChunk {
-		public fixed byte Data[TAG_ARRAY_LENGTH * 16];
-	}
-
-	static DataChunk rawMap;
-	static int count = 0;
-
-	public static unsafe bool AddMap(IntPtr address, uint pages) {
-		// TODO: "Defrag" tags by combining adjacent free memory regions into a single entry. Maybe think about doing this every time pages are freed?
-		if (count == TAG_ARRAY_LENGTH)
-			return false;
-
-		Tag* map;
-
-		fixed (byte* data = rawMap.Data)
-			map = (Tag*)data;
-
-		map[count++] = new Tag(address, pages, true);
 
 		return true;
 	}
 
+
 	[RuntimeExport("liballoc_lock")]
 	public static int Lock() {
-		// TODO: Implement this
+		if (IDT.Initialised)
+			IDT.Disable();
+
 		return 0;
 	}
 
 	[RuntimeExport("liballoc_unlock")]
 	public static int Unlock() {
-		// TODO: Implement this
+		if (IDT.Initialised)
+			IDT.Enable();
+
 		return 0;
 	}
 
 	[RuntimeExport("liballoc_alloc")]
-	public static unsafe IntPtr Alloc(ulong size) {
-		Tag* map;
+	public static unsafe IntPtr Alloc(ulong pages) {
+		var count = 0;
+		var index = 0;
 
-		fixed (byte* data = rawMap.Data)
-			map = (Tag*)data;
+		for (; ; ) {
+			if (index >= totalPages)
+				return IntPtr.Zero;
 
-		var smallest = 0x7FFFFFFF;
-		int idx = -1;
+			if (count == (int)pages) {
+				for (int i = 0; i < (int)pages; i++) {
+					var _off = (index + i) / 8;
+					var _bit = (index + i) % 8;
+					bitMap.Data[_off] &= (byte)~(1 << _bit);
+				}
 
-		for (int i = 0; i < count; i++) {
-			ref var _tag = ref map[i];
+				allocations++;
 
-			if (!_tag.IsFree)
-				continue;
-
-			if (_tag.Pages < size)
-				continue;
-
-			if (_tag.Pages == size) {
-				_tag.IsFree = false;
-
-				return _tag.Address;
+				return (IntPtr)(index * 4096);
 			}
 
-			if (_tag.Pages < smallest) {
-				smallest = (int)_tag.Pages;
-				idx = i;
+			if (count == 0) {
+				for (; ; ) {
+					var _off = index / 8;
+					var _bit = index % 8;
+
+					if ((bitMap.Data[_off] & (1 << _bit)) == (1 << _bit))
+						break;
+
+					index++;
+				}
 			}
+
+			var off = (index + count) / 8;
+			var bit = (index + count) % 8;
+
+			if ((bitMap.Data[off] & (1 << bit)) != (1 << bit))
+				count = 0;
+
+			count++;
 		}
-
-		if (idx == -1)
-			return IntPtr.Zero;
-
-		ref var tag = ref map[idx];
-		var remPages = tag.Pages - size;
-		var remAddr = tag.Address + (size * 4 * 1024);
-		tag.Pages = (uint)size;
-		tag.IsFree = false;
-
-		AddMap(remAddr, (uint)remPages);
-
-		return tag.Address;
 	}
 
 	[RuntimeExport("liballoc_free")]
-	public static unsafe int Free(IntPtr ptr, ulong size) {
-		Tag* map;
+	public static unsafe int Free(IntPtr ptr, ulong pages) {
+		AddFreePages(ptr, (uint)pages);
+		allocations--;
 
-		fixed (byte* data = rawMap.Data)
-			map = (Tag*)data;
-
-		for (int i = 0; i < count; i++) {
-			ref var tag = ref map[i];
-
-			if (!tag.Address.Equals(ptr))
-				continue;
-
-			// TODO: Find out if this can ever happen, and manage it by freeing up the requested pages and added another entry for the remaining pages
-			if (tag.Pages != size)
-				return 1;
-
-			tag.IsFree = true;
-
-			return 0;
-		}
-
-		return 1;
+		return 0;
 	}
+
+	public static ulong TotalMemory
+		=> (ulong)totalPages * 4096;
+
+	public static unsafe ulong UsedMemory {
+		get {
+			var r = 0UL;
+
+			for (int i = 0; i < totalPages / 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					if ((bitMap.Data[i] & (1 << j)) != (1 << j))
+						r++;
+				}
+			}
+
+			return r * 4096;
+		}
+	}
+
+	public static ulong FreeMemory
+		=> TotalMemory - UsedMemory;
+
+	public static ulong Allocations
+		=> (ulong)allocations;
 }

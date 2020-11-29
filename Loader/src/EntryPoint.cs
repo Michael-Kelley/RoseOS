@@ -234,8 +234,8 @@ public static class EntryPoint {
 		// We should never get here!
 		// QEMU shutdown
 		//Native.outw(0xB004, 0x2000);
-		Console.WriteLine("\r\n\r\nPress any key to quit...");
-		Console.ReadKey();
+		//Console.WriteLine("\r\n\r\nPress any key to quit...");
+		//Console.ReadKey();
 
 		return 0;
 	}

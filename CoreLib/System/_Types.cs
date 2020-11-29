@@ -1,4 +1,6 @@
 
+using System.Runtime.CompilerServices;
+
 namespace System {
 	public struct Void { }
 
@@ -119,12 +121,31 @@ namespace System {
 	public struct Double { }
 
 	public abstract class ValueType { }
-	public abstract class Enum : ValueType { }
+
+	public abstract class Enum : ValueType {
+		[Intrinsic]
+		public bool HasFlag(Enum flag) {
+			return false;
+		}
+	}
+
+	public abstract class Delegate {
+		protected internal object firstParameter;
+		protected internal IntPtr functionPointer;
+
+
+		protected void InitializeClosedInstance(object firstParameter, IntPtr functionPointer) {
+			if (firstParameter == null)
+				return;
+
+			this.firstParameter = firstParameter;
+			this.functionPointer = functionPointer;
+		}
+	}
+
+	public abstract class MulticastDelegate : Delegate { }
 
 	public struct Nullable<T> where T : struct { }
-
-	public abstract class Delegate { }
-	public abstract class MulticastDelegate : Delegate { }
 
 	public struct RuntimeTypeHandle { }
 	public struct RuntimeMethodHandle { }

@@ -21,6 +21,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Attribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\AttributeUsageAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\BitHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Collections\Generic\Queue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\EventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Exception.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Console.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\ConsoleColor.cs" />
@@ -31,6 +33,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\FlagsAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IntPtr.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NativeTypeWrappers\NativeString.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Key.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\KeyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\KeyModifier.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\KeyState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Object.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\ParamArrayAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\ClassConstructorRunner.cs" />
@@ -43,6 +49,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\DllImportAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\FieldOffsetAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\McgIntrinsicsAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\SuppressGCTransition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\UnmanagedFunctionPointerAttribute.cs" />
     <Compile Include="..\CoreLib\System\Runtime\InteropServices\UnmanagedCallersOnlyAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\StructLayoutAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\InteropServices\UnmanagedType.cs" />

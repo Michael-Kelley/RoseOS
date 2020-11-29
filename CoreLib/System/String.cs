@@ -2,13 +2,20 @@
 using Internal.Runtime.CompilerHelpers;
 using Internal.Runtime.CompilerServices;
 
+
 namespace System {
 	public sealed class String {
+		[Intrinsic]
+		public static readonly string Empty = "";
+
+
 		// The layout of the string type is a contract with the compiler.
 		int _length;
 		internal char _firstChar;
 
+
 		public int Length {
+			[Intrinsic]
 			get { return _length; }
 			internal set { _length = value; }
 		}
@@ -20,12 +27,15 @@ namespace System {
 			}
 		}
 
+
 #pragma warning disable 824
 		public extern unsafe String(char* ptr);
 		public extern String(IntPtr ptr);
 		public extern String(char[] buf);
 		public extern unsafe String(char* ptr, int index, int length);
+		public extern unsafe String(char[] buf, int index, int length);
 #pragma warning restore 824
+
 
 		public unsafe static string FromASCII(IntPtr ptr, int length) {
 			var buf = new char[9];
@@ -72,8 +82,42 @@ namespace System {
 			return s;
 		}
 
+		static unsafe string Ctor(char[] ptr, int index, int length) {
+			fixed (char* _ptr = ptr)
+				return Ctor(_ptr, index, length);
+		}
+
 		public override string ToString() {
 			return this;
+		}
+
+		public override bool Equals(object obj) {
+			if (obj is not string)
+				return false;
+
+			return Equals((string)obj);
+		}
+
+		public bool Equals(string val) {
+			if (this.Length != val.Length)
+				return false;
+
+			for (int i = 0; i < this.Length; i++) {
+				if (this[i] != val[i])
+					return false;
+			}
+
+			return true;
+		}
+
+		public static bool operator ==(string a, string b)
+			=> a.Equals(b);
+
+		public static bool operator !=(string a, string b)
+			=> !a.Equals(b);
+
+		public override int GetHashCode() {
+			return 0;
 		}
 
 		// TODO: This

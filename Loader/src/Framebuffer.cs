@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+
 [StructLayout(LayoutKind.Sequential)]
 public struct FrameBuffer {
 	public enum PixelFormat {
@@ -9,6 +10,7 @@ public struct FrameBuffer {
 		B8G8R8,
 	}
 
+
 	readonly IntPtr _ptr;
 	readonly ulong _len;
 
@@ -16,8 +18,10 @@ public struct FrameBuffer {
 	public readonly uint Height;
 	public readonly PixelFormat Format;
 
+
 	internal static FrameBuffer _instance;
 	public static ref FrameBuffer I => ref _instance;
+
 
 	public FrameBuffer(IntPtr pointer, ulong length, uint width, uint height, PixelFormat format) {
 		_ptr = pointer;
@@ -26,6 +30,7 @@ public struct FrameBuffer {
 		Height = height;
 		Format = format;
 	}
+
 
 	public unsafe uint this[uint index] {
 		get => ((uint*)_ptr)[index];
@@ -36,6 +41,7 @@ public struct FrameBuffer {
 		get => ((uint*)_ptr)[y * Width + x];
 		set { ((uint*)_ptr)[y * Width + x] = value; }
 	}
+
 
 	public unsafe void Clear() {
 		var count = _len / 2;
@@ -72,5 +78,18 @@ public struct FrameBuffer {
 		fixed (uint* _src = src)
 			for (int sy = 0; sy < height; sy++)
 				Platform.CopyMemory(_ptr + 4 * (ulong)((y + sy) * Width + x), (IntPtr)(_src + (sy * width)), 4 * width);
+	}
+
+	public unsafe void Move(int x, int y, uint fillColour = 0) {
+		if (y != 0) {
+			if (y < 0) {
+				var index = -y * (int)Width;
+				var len = (_len / 4) - (ulong)index;
+				Platform.CopyMemory(_ptr, _ptr + 4 * (uint)index, len * 4);
+
+				for (uint i = (uint)len; i < _len / 4; ++i)
+					this[i] = fillColour;
+			}
+		}
 	}
 }

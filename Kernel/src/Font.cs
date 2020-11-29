@@ -1,4 +1,5 @@
-﻿// Gomme
+﻿
+// Gomme
 // https://github.com/Tecate/bitmap-fonts/blob/master/bitmap/gomme/Gomme10x20n.bdf
 static class Font {
 	public const int FONT_WIDTH = 10;
@@ -7,7 +8,9 @@ static class Font {
 	const int START_CODEPOINT = ' ';
 	const int END_CODEPOINT = '~';
 
+
 	static ushort[][] _data = null;
+
 
 	public static void Initialise() {
 		_data = new ushort[][] {

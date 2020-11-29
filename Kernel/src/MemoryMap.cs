@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+
 public struct MemoryMap {
 	[StructLayout(LayoutKind.Sequential)]
 	public readonly struct Descriptor {
@@ -14,11 +15,14 @@ public struct MemoryMap {
 			=> Type == 7 || (Type >= 1 && Type <= 4);
 	}
 
+
 	readonly IntPtr _pointer;
 	readonly ulong descriptorSize;
 
+
 	public int Length { get; private set; }
 	public ulong Key { get; private set; }
+
 
 	public unsafe Descriptor this[int index]
 		=> *(Descriptor*)(_pointer + (uint)index * (uint)descriptorSize);

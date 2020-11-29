@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-public static class Native {
+
+static class Native {
 	[DllImport("*")]
 	public static extern void outb(ushort port, byte value);
 
@@ -22,4 +23,19 @@ public static class Native {
 
 	[DllImport("*")]
 	public static extern void kfree(IntPtr ptr);
+
+	[DllImport("*")]
+	public static extern void load_gdt(ref GDT.GDTDescriptor gdtr);
+
+	[DllImport("*")]
+	public static extern void load_idt(ref IDT.IDTDescriptor idtr);
+
+	[DllImport("*")]
+	public static extern void _hlt();
+
+	[DllImport("*")]
+	public static extern void _cli();
+
+	[DllImport("*")]
+	public static extern void _sti();
 }

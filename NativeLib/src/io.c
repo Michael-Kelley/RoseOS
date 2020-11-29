@@ -10,3 +10,7 @@ void outw(unsigned short port, unsigned short value) {
 unsigned char inb(unsigned short port) {
 	return __inbyte(port);
 }
+
+unsigned short inw(unsigned short port) {
+	return __inword(port);
+}
